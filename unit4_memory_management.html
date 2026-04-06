@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GATE OS | Unit 4: Memory Management</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080b14;
+    --surface: #0f1520;
+    --surface2: #141d2e;
+    --border: #1c2a40;
+    --accent: #a78bfa;
+    --accent2: #06b6d4;
+    --accent3: #34d399;
+    --warn: #fbbf24;
+    --danger: #f87171;
+    --text: #dde4f0;
+    --muted: #4d6080;
+    --mcq-clr: #38bdf8;
+    --msq-clr: #c084fc;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 15px; line-height: 1.7; min-height: 100vh; }
+
+  /* HERO */
+  .hero {
+    position: relative; overflow: hidden;
+    padding: 52px 24px 44px; text-align: center;
+    background: linear-gradient(160deg, #0b0f1f 0%, #0f1a30 60%, #080b14 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(167,139,250,0.13), transparent);
+    pointer-events: none;
+  }
+  .hero::after {
+    content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 60%; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(167,139,250,0.4), transparent);
+  }
+  .hero-tag {
+    display: inline-block; font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--accent); border: 1px solid rgba(167,139,250,0.3);
+    padding: 4px 16px; border-radius: 2px; margin-bottom: 20px;
+  }
+  .hero h1 { font-family: 'Syne', sans-serif; font-size: clamp(26px, 5vw, 50px); font-weight: 800; letter-spacing: -1px; line-height: 1.1; color: #fff; }
+  .hero h1 span { color: var(--accent); }
+  .hero-sub { margin-top: 14px; color: var(--muted); font-size: 13.5px; letter-spacing: 0.4px; max-width: 600px; margin-inline: auto; }
+
+  /* STATS */
+  .stats-bar { display: flex; justify-content: center; gap: 0; flex-wrap: wrap; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .stat { padding: 16px 28px; text-align: center; border-right: 1px solid var(--border); }
+  .stat:last-child { border-right: none; }
+  .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: var(--accent); }
+  .stat-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-top: 2px; }
+
+  /* TOOLBAR */
+  .toolbar { max-width: 980px; margin: 24px auto 0; padding: 0 20px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .filter-btn {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 7px 16px;
+    border-radius: 3px; border: 1px solid var(--border); background: var(--surface);
+    color: var(--muted); cursor: pointer; transition: all .18s; letter-spacing: 0.5px;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(167,139,250,0.07); }
+  .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(167,139,250,0.1); }
+  .sep { width: 1px; height: 28px; background: var(--border); margin: 0 4px; }
+  .action-btn {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 7px 18px;
+    border-radius: 3px; cursor: pointer; transition: all .18s; letter-spacing: 0.5px;
+  }
+  .btn-showall { border: 1px solid rgba(251,191,36,0.35); color: var(--warn); background: rgba(251,191,36,0.07); }
+  .btn-showall:hover { background: rgba(251,191,36,0.14); border-color: var(--warn); }
+  .btn-reset { border: 1px solid rgba(248,113,113,0.35); color: var(--danger); background: rgba(248,113,113,0.07); }
+  .btn-reset:hover { background: rgba(248,113,113,0.14); border-color: var(--danger); }
+  .score-pill {
+    margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--accent3); padding: 7px 18px;
+    border: 1px solid rgba(52,211,153,0.25); border-radius: 3px; background: rgba(52,211,153,0.06);
+  }
+
+  /* MAIN */
+  main { max-width: 980px; margin: 0 auto; padding: 24px 20px 70px; }
+
+  /* TOPIC HEADER */
+  .topic-header { display: flex; align-items: center; gap: 14px; margin: 38px 0 18px; }
+  .topic-header .t-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2.5px;
+    text-transform: uppercase; color: var(--accent2); white-space: nowrap;
+    border-left: 3px solid var(--accent2); padding-left: 10px;
+  }
+  .topic-header::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+
+  /* CARD */
+  .q-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 14px; overflow: hidden;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .q-card:hover { border-color: #243550; box-shadow: 0 4px 24px rgba(0,0,0,0.3); }
+  .q-card.answered-correct { border-left: 3px solid var(--accent3); }
+  .q-card.answered-wrong { border-left: 3px solid var(--danger); }
+
+  .q-header { display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px 14px; cursor: pointer; user-select: none; }
+  .q-num { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); padding-top: 3px; min-width: 26px; }
+  .q-body { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .q-tags { display: flex; gap: 7px; flex-wrap: wrap; }
+  .tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 9px; border-radius: 2px; font-weight: 700; }
+  .tag-mcq { background: rgba(56,189,248,0.12); color: var(--mcq-clr); border: 1px solid rgba(56,189,248,0.22); }
+  .tag-msq { background: rgba(192,132,252,0.12); color: var(--msq-clr); border: 1px solid rgba(192,132,252,0.22); }
+  .tag-basic { background: rgba(52,211,153,0.09); color: var(--accent3); border: 1px solid rgba(52,211,153,0.18); }
+  .tag-moderate { background: rgba(251,191,36,0.09); color: var(--warn); border: 1px solid rgba(251,191,36,0.18); }
+  .tag-advanced { background: rgba(248,113,113,0.09); color: var(--danger); border: 1px solid rgba(248,113,113,0.18); }
+  .q-text { font-size: 14.5px; line-height: 1.65; color: var(--text); }
+  .q-text code { font-family: 'JetBrains Mono', monospace; background: rgba(6,182,212,0.09); border: 1px solid rgba(6,182,212,0.18); padding: 1px 6px; border-radius: 3px; font-size: 13px; color: var(--accent2); }
+  .msq-note { font-size: 11px; color: var(--msq-clr); margin-left: 6px; }
+  .q-chevron { color: var(--muted); font-size: 16px; transition: transform .25s; padding-top: 3px; flex-shrink: 0; }
+  .q-card.open .q-chevron { transform: rotate(180deg); color: var(--accent); }
+
+  /* OPTIONS */
+  .q-options { padding: 0 20px 0 60px; display: none; flex-direction: column; gap: 8px; }
+  .q-card.open .q-options { display: flex; }
+  .option {
+    display: flex; align-items: flex-start; gap: 12px; padding: 10px 14px;
+    border: 1px solid var(--border); border-radius: 5px;
+    background: var(--surface2); cursor: pointer; transition: all .15s;
+  }
+  .option:hover:not(.locked) { border-color: #2c4060; background: #182030; }
+  .option.selected { border-color: var(--accent); background: rgba(167,139,250,0.07); }
+  .option.correct { border-color: var(--accent3) !important; background: rgba(52,211,153,0.08) !important; }
+  .option.wrong { border-color: var(--danger) !important; background: rgba(248,113,113,0.08) !important; }
+  .option.reveal-correct { border-color: var(--accent3) !important; background: rgba(52,211,153,0.06) !important; }
+  .opt-lbl { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); font-weight: 700; min-width: 18px; padding-top: 1px; }
+  .opt-txt { font-size: 14px; line-height: 1.5; }
+
+  /* ANSWER ZONE */
+  .q-az { display: none; padding: 12px 20px 0 60px; }
+  .q-card.open .q-az { display: block; }
+  .submit-btn {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 8px 22px;
+    background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3);
+    color: var(--accent); border-radius: 3px; cursor: pointer; transition: all .18s; letter-spacing: 1px;
+  }
+  .submit-btn:hover { background: rgba(167,139,250,0.18); }
+  .submit-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* EXPLANATION */
+  .explanation {
+    margin: 12px 20px 18px 60px; padding: 14px 16px;
+    background: rgba(167,139,250,0.04); border-left: 3px solid var(--accent);
+    border-radius: 0 5px 5px 0; display: none;
+  }
+  .explanation.show { display: block; }
+  .exp-lbl { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .ans-reveal { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent3); margin-bottom: 8px; }
+  .exp-body { font-size: 13.5px; line-height: 1.65; color: #8aa0bc; }
+  .exp-body code { font-family: 'JetBrains Mono', monospace; color: var(--accent2); background: rgba(6,182,212,0.08); padding: 1px 5px; border-radius: 2px; font-size: 12.5px; }
+
+  /* PROGRESS */
+  .prog-wrap { position: fixed; bottom: 0; left: 0; right: 0; height: 3px; background: var(--surface); z-index: 100; }
+  .prog-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 0%; transition: width .3s; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 20px; right: 20px; z-index: 999;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 10px 20px;
+    border-radius: 4px; border: 1px solid; opacity: 0; transform: translateY(10px);
+    transition: all .3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast-info { background: rgba(167,139,250,0.12); border-color: rgba(167,139,250,0.35); color: var(--accent); }
+  .toast-success { background: rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.35); color: var(--accent3); }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media(max-width:600px) {
+    .q-options, .q-az, .explanation { padding-left: 20px; }
+    .stat { padding: 12px 16px; }
+    .stats-bar { gap: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-tag">GATE · Operating Systems</div>
+  <h1>Unit 4 — <span>Memory Management</span></h1>
+  <p class="hero-sub">Address Translation · Paging · Segmentation · Virtual Memory · Page Faults · mmap · Linux &amp; Windows</p>
+</div>
+
+<div class="stats-bar">
+  <div class="stat"><div class="stat-val">32</div><div class="stat-lbl">Questions</div></div>
+  <div class="stat"><div class="stat-val" id="s-mcq">21</div><div class="stat-lbl">MCQ</div></div>
+  <div class="stat"><div class="stat-val" id="s-msq">11</div><div class="stat-lbl">MSQ</div></div>
+  <div class="stat"><div class="stat-val" id="s-att">0</div><div class="stat-lbl">Attempted</div></div>
+  <div class="stat"><div class="stat-val" id="s-cor">0</div><div class="stat-lbl">Correct</div></div>
+</div>
+
+<div class="toolbar">
+  <button class="filter-btn active" onclick="filter('all',this)">All</button>
+  <button class="filter-btn" onclick="filter('MCQ',this)">MCQ</button>
+  <button class="filter-btn" onclick="filter('MSQ',this)">MSQ</button>
+  <div class="sep"></div>
+  <button class="filter-btn" onclick="filter('basic',this)">Basic</button>
+  <button class="filter-btn" onclick="filter('moderate',this)">Moderate</button>
+  <button class="filter-btn" onclick="filter('advanced',this)">Advanced</button>
+  <div class="sep"></div>
+  <button class="action-btn btn-showall" onclick="showAllAnswers()">▸ SHOW ALL ANSWERS</button>
+  <button class="action-btn btn-reset" onclick="resetAll()">↺ RESET</button>
+  <div class="score-pill" id="score-pill">Score: 0 / 0</div>
+</div>
+
+<main id="main"></main>
+<div class="prog-wrap"><div class="prog-bar" id="prog"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const Q = [
+  // ── ADDRESS BUS & MEMORY ACCESS ──
+  {id:1,type:"MCQ",diff:"basic",topic:"Address Bus & Memory Access",
+   q:"A system has a 32-bit address bus. What is the maximum addressable memory?",
+   opts:["2 GB","4 GB","8 GB","16 GB"],
+   ans:[1],
+   exp:"With a 32-bit address bus, there are 2³² = 4,294,967,296 unique addresses. Assuming byte-addressable memory, this gives 4 GB (4 × 2³⁰ bytes). That is why 32-bit OSes are limited to ~4 GB RAM without PAE extensions."},
+
+  {id:2,type:"MCQ",diff:"moderate",topic:"Address Bus & Memory Access",
+   q:"A CPU generates a logical address. The Memory Management Unit (MMU) converts it to a physical address. This translation is necessary because:",
+   opts:["Physical RAM is always larger than logical address space","Each process has its own virtual address space independent of physical layout","The CPU cache uses physical addresses only","The OS kernel requires privileged access to all addresses"],
+   ans:[1],
+   exp:"Each process believes it has its own private address space starting at 0. The MMU maps these logical (virtual) addresses to actual physical RAM locations. This allows isolation, relocation, and sharing — multiple processes can have the same logical address mapping to different physical addresses."},
+
+  // ── PROCESS MEMORY LAYOUT ──
+  {id:3,type:"MCQ",diff:"basic",topic:"Process Memory Layout",
+   q:"In a typical Linux process memory layout (low to high address), the correct order of segments is:",
+   opts:["Stack → Heap → BSS → Data → Text","Text → Data → BSS → Heap → Stack","Heap → Stack → Text → Data → BSS","Text → Stack → Heap → BSS → Data"],
+   ans:[1],
+   exp:"Standard Linux layout (low→high): Text (code, read-only) → Initialized Data → BSS (uninitialized data, zero-filled) → Heap (grows upward ↑) → ... → Stack (grows downward ↓ from high address). The heap and stack grow toward each other, with mmap region in between."},
+
+  {id:4,type:"MSQ",diff:"moderate",topic:"Process Memory Layout",
+   q:"Which of the following segments of a process are typically stored in the executable file on disk?",
+   opts:["Text (code) segment","Initialized data segment","BSS (uninitialized data) segment","Stack segment"],
+   ans:[0,1],
+   exp:"The Text segment (machine code) and initialized data segment (.data) are stored in the executable file (ELF on Linux, PE on Windows). The BSS segment is NOT stored — only its size is recorded; the OS zero-fills it at load time. The stack is created fresh at runtime by the OS."},
+
+  {id:5,type:"MCQ",diff:"moderate",topic:"Process Memory Layout",
+   q:"A local variable declared inside a function is stored in the:",
+   opts:["Heap","BSS segment","Stack","Text segment"],
+   ans:[2],
+   exp:"Local (auto) variables are allocated on the stack frame of the calling function. They are created when the function is called and destroyed when it returns. The heap is for dynamic allocation (malloc/new), BSS for global uninitialized variables, and text for compiled code."},
+
+  // ── VIRTUAL MEMORY & ADDRESS SPACE ──
+  {id:6,type:"MCQ",diff:"basic",topic:"Virtual Memory",
+   q:"Virtual memory allows a process to use more memory than physically available RAM because:",
+   opts:["It compresses data to fit more in RAM","Pages not currently needed can be stored on disk (swap) and brought in on demand","It shares physical pages between all processes","It uses the CPU cache as additional RAM"],
+   ans:[1],
+   exp:"Virtual memory uses demand paging — a page is loaded into physical RAM only when accessed. Infrequently used pages are swapped to disk (swap space/page file). This creates the illusion of a large address space. The total effective memory = RAM + swap space."},
+
+  {id:7,type:"MSQ",diff:"moderate",topic:"Virtual Memory",
+   q:"Which of the following are benefits of virtual memory?",
+   opts:["Process isolation — one process cannot directly access another's memory","Allows running programs larger than physical RAM","Simplifies program loading via relocation","Enables memory-mapped files"],
+   ans:[0,1,2,3],
+   exp:"All four are real benefits: (A) Each process has a separate virtual address space preventing unauthorized access. (B) Demand paging allows programs larger than RAM. (C) Programs can be loaded at any physical address; virtual addresses stay consistent. (D) Files can be mapped into address space via mmap, accessed like arrays."},
+
+  // ── SYSTEM CALLS: mmap, sbrk, mprotect ──
+  {id:8,type:"MCQ",diff:"moderate",topic:"Memory System Calls",
+   q:"The <code>mmap()</code> system call can be used to:",
+   opts:["Only map files into memory","Only allocate anonymous memory","Map files into memory AND allocate anonymous memory","Only share memory between processes"],
+   ans:[2],
+   exp:"mmap() is versatile: (1) File-backed mapping: maps a file into the process address space for fast I/O. (2) Anonymous mapping (MAP_ANONYMOUS): allocates pages not backed by a file — used for large heap allocations by malloc. (3) Shared mappings (MAP_SHARED) allow IPC. It's a unified interface for all these use cases."},
+
+  {id:9,type:"MCQ",diff:"moderate",topic:"Memory System Calls",
+   q:"What does <code>mprotect(addr, len, PROT_READ)</code> do?",
+   opts:["Allocates len bytes at addr with read permission","Changes the protection of the memory region [addr, addr+len) to read-only","Frees the memory region and marks it read-only","Locks the region in RAM and prevents swapping"],
+   ans:[1],
+   exp:"mprotect() changes the memory protection of an already-mapped region. PROT_READ makes it read-only — any write attempt will raise SIGSEGV. It's used by runtime systems, JIT compilers (mark code pages executable), and security mechanisms like W^X (Write XOR Execute policy)."},
+
+  {id:10,type:"MCQ",diff:"advanced",topic:"Memory System Calls",
+   q:"The <code>sbrk()</code> system call is used to:",
+   opts:["Map a file into memory","Change the process's data segment size by moving the program break","Protect a memory region from writes","Unmap a previously mapped region"],
+   ans:[1],
+   exp:"sbrk(increment) moves the 'program break' (end of BSS/heap) up or down by increment bytes, effectively growing or shrinking the heap. It is the low-level mechanism used by early malloc implementations. Modern allocators prefer mmap for large allocations since sbrk doesn't support non-contiguous frees."},
+
+  // ── PAGING ──
+  {id:11,type:"MCQ",diff:"basic",topic:"Paging",
+   q:"In a paging system, internal fragmentation occurs because:",
+   opts:["Pages are of variable size","The last page of a process may not be fully used","Processes must be contiguous in memory","Free frames cannot be reused"],
+   ans:[1],
+   exp:"In paging, memory is divided into fixed-size frames and process memory into fixed-size pages. The last page allocated to a process is unlikely to be completely full — the unused portion within that last page is internal fragmentation. Paging eliminates external fragmentation but introduces internal fragmentation."},
+
+  {id:12,type:"MCQ",diff:"moderate",topic:"Paging",
+   q:"A system has 32-bit logical addresses, a page size of 4 KB. How many entries does the page table have per process?",
+   opts:["1024","4096","1048576 (2²⁰)","8388608"],
+   ans:[2],
+   exp:"Page offset bits = log₂(4KB) = log₂(4096) = 12 bits. Page number bits = 32 − 12 = 20 bits. Number of page table entries = 2²⁰ = 1,048,576 entries per process. With 4 bytes per entry, the page table is 4 MB per process — motivating multi-level page tables."},
+
+  {id:13,type:"MCQ",diff:"advanced",topic:"Paging",
+   q:"A process accesses virtual address 0x3A4F. Page size = 256 bytes. Physical frame 7 maps to virtual page 58 (decimal). What is the physical address?",
+   opts:["0x74F","0x7AF","0x74F","0x84F"],
+   ans:[0],
+   exp:"Page size = 256 = 2⁸, so offset = 8 bits. Virtual address 0x3A4F: page number = 0x3A4F >> 8 = 0x3A = 58, offset = 0x4F. Frame 7 maps page 58, so physical address = (7 << 8) | 0x4F = 0x700 | 0x4F = 0x74F."},
+
+  {id:14,type:"MSQ",diff:"moderate",topic:"Paging",
+   q:"Which of the following are TRUE about multi-level page tables?",
+   opts:["They reduce memory used by page tables for sparse address spaces","They increase the number of memory accesses needed per address translation","They are used by x86-64 processors (4-level paging)","They eliminate the need for a TLB"],
+   ans:[0,1,2],
+   exp:"(A) TRUE — only page directory entries for used regions need to exist, saving memory for sparse spaces. (B) TRUE — each level adds one memory access (e.g., 4-level = 4 accesses + 1 data = 5 total). (C) TRUE — x86-64 uses PGD→PUD→PMD→PTE (4 levels). (D) FALSE — TLB is still essential to cache translations and avoid multi-level lookups."},
+
+  {id:15,type:"MCQ",diff:"moderate",topic:"Paging",
+   q:"The Translation Lookaside Buffer (TLB) is a:",
+   opts:["Part of the page table stored in RAM","Hardware cache that stores recent virtual-to-physical address mappings","Software-managed table in the OS kernel","Buffer that stores recently accessed memory pages"],
+   ans:[1],
+   exp:"The TLB is a small, fast hardware cache (typically 32–2048 entries) inside the MMU that stores recent virtual page → physical frame mappings. On a TLB hit, translation takes ~1 cycle. On a TLB miss, the hardware (or OS on MIPS/SPARC) must walk the page table. TLB hit rates > 99% are typical for real workloads."},
+
+  {id:16,type:"MCQ",diff:"advanced",topic:"Paging",
+   q:"A TLB has 64 entries with a hit rate of 95%. Main memory access time is 100ns, TLB access time is 5ns. What is the Effective Memory Access Time (EMAT)?",
+   opts:["105 ns","110 ns","5 + 0.95×100 + 0.05×200 = 110 ns","5 + 0.95×100 + 0.05×200"],
+   ans:[2],
+   exp:"EMAT = TLB_time + hit_rate × mem_time + miss_rate × (mem_time + mem_time) = 5 + 0.95×100 + 0.05×200 = 5 + 95 + 10 = 110 ns. On a TLB miss, we access page table in memory (100ns) + then access data (100ns) = 200ns total memory accesses, plus TLB time."},
+
+  // ── SEGMENTATION ──
+  {id:17,type:"MCQ",diff:"basic",topic:"Segmentation",
+   q:"Segmentation differs from paging in that:",
+   opts:["Segmentation uses fixed-size units; paging uses variable sizes","Segmentation uses variable-size units matching logical program structure; paging uses fixed-size pages","Segmentation is always faster than paging","Segmentation does not require a hardware table for translation"],
+   ans:[1],
+   exp:"Segmentation divides memory into variable-size segments corresponding to logical units (code, stack, heap, data). Each segment has a base and limit. Paging uses fixed equal-size pages regardless of logical structure. Segmentation causes external fragmentation; paging causes internal fragmentation."},
+
+  {id:18,type:"MSQ",diff:"moderate",topic:"Segmentation",
+   q:"Which of the following are TRUE about segmentation?",
+   opts:["A logical address is a (segment number, offset) pair","External fragmentation can occur with segmentation","Segmentation facilitates sharing of code between processes","A segment table entry contains a base address and a limit"],
+   ans:[0,1,2,3],
+   exp:"All four are correct: (A) The logical address space is a collection of segments, each addressed by (seg#, offset). (B) Variable-size segments leave holes in physical memory → external fragmentation. (C) The code segment can be shared between processes by mapping both to the same physical segment. (D) Each segment table entry has base (physical start) and limit (size) for bounds checking."},
+
+  // ── PAGE FAULTS ──
+  {id:19,type:"MCQ",diff:"moderate",topic:"Page Faults & Swapping",
+   q:"When a page fault occurs and a free frame is NOT available, the OS must:",
+   opts:["Terminate the process immediately","Select a victim page, swap it to disk if dirty, load the required page, update page tables","Wait until another process frees a frame","Increase physical RAM dynamically"],
+   ans:[1],
+   exp:"When no free frame exists, the OS runs a page replacement algorithm to select a victim frame. If the victim page is dirty (modified), it is written to swap (disk). Then the required page is loaded from disk into the freed frame, the page table is updated, and the faulting instruction is restarted. This is demand paging with page replacement."},
+
+  {id:20,type:"MCQ",diff:"advanced",topic:"Page Faults & Swapping",
+   q:"Belady's Anomaly refers to:",
+   opts:["More page faults occurring with a larger page size","FIFO page replacement causing MORE page faults with MORE physical frames for certain reference strings","The TLB miss rate increasing with larger processes","LRU performing worse than FIFO for sequential access patterns"],
+   ans:[1],
+   exp:"Belady's Anomaly: the FIFO page replacement algorithm can produce MORE page faults when given MORE physical frames for some reference strings. This is counter-intuitive. Optimal (OPT) and LRU algorithms are stack algorithms and do NOT exhibit Belady's Anomaly — more frames always ≤ fewer faults."},
+
+  {id:21,type:"MCQ",diff:"moderate",topic:"Page Faults & Swapping",
+   q:"The optimal page replacement algorithm (OPT/MIN) replaces:",
+   opts:["The page that has not been used for the longest time in the past (LRU policy)","The page that will not be used for the longest time in the future","The first page loaded (FIFO policy)","The page with the fewest future accesses"],
+   ans:[1],
+   exp:"OPT replaces the page whose next use is farthest in the future. It guarantees the minimum number of page faults for any given reference string and frame count. It's not implementable in practice (requires future knowledge) but serves as a benchmark to evaluate other algorithms."},
+
+  {id:22,type:"MSQ",diff:"advanced",topic:"Page Faults & Swapping",
+   q:"Reference string: 1,2,3,4,1,2,5,1,2,3,4,5 with 3 frames. Which page replacement algorithms result in the SAME number of faults?",
+   opts:["FIFO gives 9 faults","LRU gives 8 faults","OPT gives 6 faults","FIFO gives 10 faults"],
+   ans:[0,1,2],
+   exp:"For this classic reference string with 3 frames: OPT = 6 faults, LRU = 8 faults, FIFO = 9 faults. These are the standard results for this benchmark string used in OS textbooks. (D) is wrong — FIFO gives 9, not 10."},
+
+  // ── MEMORY PROTECTION & SHARING ──
+  {id:23,type:"MCQ",diff:"moderate",topic:"Memory Protection & Sharing",
+   q:"How does paging hardware enforce memory protection between processes?",
+   opts:["By using a single shared page table for all processes","Each process has its own page table; the MMU checks that only valid entries are accessed","The OS encrypts each process's pages","By assigning dedicated physical RAM to each process"],
+   ans:[1],
+   exp:"Each process has its own page table. The OS maintains separate page tables and switches the page table base register (CR3 on x86) on context switch. The MMU validates each access against the page table entries — accessing an unmapped page raises a fault, accessing a page without the right permission (R/W/X) raises a protection fault (segfault)."},
+
+  {id:24,type:"MSQ",diff:"moderate",topic:"Memory Protection & Sharing",
+   q:"Which of the following mechanisms enable memory sharing between processes?",
+   opts:["Shared libraries mapped to the same physical frames in multiple processes","Copy-on-Write (COW) after fork()","Named shared memory segments (POSIX shm_open)","Memory-mapped files with MAP_SHARED"],
+   ans:[0,1,2,3],
+   exp:"All four enable sharing: (A) Shared libs like libc.so are mapped read-only into every process — same physical pages, different virtual addresses. (B) fork() initially shares parent's pages; a copy is made only on write. (C) shm_open/mmap creates a named shared memory object. (D) MAP_SHARED mmap makes writes visible to all processes mapping the same file."},
+
+  // ── OS vs PROCESS MEMORY ──
+  {id:25,type:"MCQ",diff:"moderate",topic:"OS vs Process Memory",
+   q:"In a typical OS, kernel virtual address space is:",
+   opts:["A completely separate address space; switching to kernel mode changes the entire page table","Mapped into the upper portion of every process's virtual address space","Stored only in physical memory with no virtual mapping","Only accessible during interrupts, not during system calls"],
+   ans:[1],
+   exp:"On most OS designs (Linux, Windows), the kernel address space is mapped into the upper portion of every process's virtual address space (e.g., upper 1 GB on 32-bit Linux). User-mode code cannot access it (protection bits). This avoids a full TLB flush on system calls — only the privilege level changes, not the page table."},
+
+  {id:26,type:"MCQ",diff:"advanced",topic:"OS vs Process Memory",
+   q:"KPTI (Kernel Page Table Isolation) was introduced as a mitigation for Meltdown. It works by:",
+   opts:["Encrypting all kernel memory pages","Maintaining separate page tables for user and kernel mode, unmapping most kernel memory when in user mode","Disabling the TLB during user-mode execution","Moving the kernel to a different CPU core"],
+   ans:[1],
+   exp:"Meltdown exploited speculative execution to read kernel memory from user mode. KPTI (also called KAISER) mitigates this by maintaining two sets of page tables: user-mode tables with almost no kernel mappings (only a small trampoline for entering kernel), and full kernel tables. This prevents speculative access to kernel pages from user mode."},
+
+  // ── MEMORY MANAGEMENT TECHNIQUES ──
+  {id:27,type:"MCQ",diff:"moderate",topic:"Memory Management Techniques",
+   q:"Thrashing in a virtual memory system occurs when:",
+   opts:["The TLB is too small for the working set","Processes spend more time swapping pages in/out than doing useful work","The page size is too large causing internal fragmentation","The OS uses FIFO page replacement instead of LRU"],
+   ans:[1],
+   exp:"Thrashing occurs when the total working set of all running processes exceeds available physical memory. The OS constantly swaps pages out and brings them back, resulting in CPU utilization near 0% — the CPU is idle while waiting for I/O. Solution: reduce degree of multiprogramming, increase RAM, or use working set model."},
+
+  {id:28,type:"MSQ",diff:"advanced",topic:"Memory Management Techniques",
+   q:"Which of the following are TRUE about Copy-on-Write (COW)?",
+   opts:["After fork(), parent and child initially share the same physical pages","A copy of a shared page is made only when either process writes to it","COW is used by exec() to avoid copying the parent's address space","COW reduces the overhead of fork() significantly for programs that call exec() immediately"],
+   ans:[0,1,3],
+   exp:"(A) TRUE — fork() marks all pages shared and read-only. (B) TRUE — write triggers a page fault; OS copies the page, marks both copies writable. (C) FALSE — exec() replaces the entire address space; COW is irrelevant (exec doesn't copy parent's pages, it loads a new program). (D) TRUE — fork()+exec() (like in shells) benefits from COW: exec immediately discards the space, so most pages are never copied."},
+
+  {id:29,type:"MCQ",diff:"moderate",topic:"Memory Management Techniques",
+   q:"The Working Set Model for memory management is based on the principle of:",
+   opts:["Replacing the least recently used page globally","Keeping each process's working set (recently accessed pages) in memory to prevent thrashing","Allocating a fixed number of frames to each process","Using a global page replacement policy for all processes"],
+   ans:[1],
+   exp:"The Working Set Model (Denning, 1968) tracks the set of pages a process has accessed in the last Δ time units (the working set window). The OS ensures each process has enough frames to hold its entire working set. If total working sets exceed available frames, suspend a process rather than allow thrashing."},
+
+  // ── LINUX CASE STUDY ──
+  {id:30,type:"MCQ",diff:"moderate",topic:"Linux Memory Case Study",
+   q:"Linux uses a Buddy System for physical memory allocation. The Buddy System works by:",
+   opts:["Allocating memory in variable-size chunks based on request size","Dividing memory into blocks of powers of 2; splitting and merging buddy blocks","Using a hash table to track free pages","Allocating one page at a time always"],
+   ans:[1],
+   exp:"The Buddy System organizes free memory in lists of blocks sized 2⁰, 2¹, ..., 2ⁿ pages. For a request of size k, the smallest 2ⁿ ≥ k block is found and split if needed. Each split produces two 'buddies'. On free, a block is merged with its buddy (if free) recursively. This reduces external fragmentation with efficient O(log n) alloc/free."},
+
+  {id:31,type:"MSQ",diff:"advanced",topic:"Linux Memory Case Study",
+   q:"Which of the following are TRUE about Linux memory management?",
+   opts:["Linux uses a three-level (or four-level on x86-64) page table hierarchy","The Slab Allocator is used for kernel object allocation on top of the Buddy System","Linux supports Transparent Huge Pages (THP) to reduce TLB pressure","The OOM (Out-Of-Memory) killer terminates processes when memory is critically low"],
+   ans:[0,1,2,3],
+   exp:"All four are correct Linux memory features: (A) Linux uses PGD/PUD/PMD/PTE (4 levels on x86-64, 5 levels for LA57). (B) The Slab/SLUB allocator caches frequently allocated kernel objects (inodes, task_structs) for efficiency. (C) THP merges 4KB pages into 2MB huge pages transparently, reducing TLB misses. (D) OOM killer uses a heuristic score (oom_score) to select a victim process when the system runs out of memory."},
+
+  // ── WINDOWS CASE STUDY ──
+  {id:32,type:"MCQ",diff:"advanced",topic:"Windows Memory Case Study",
+   q:"Windows uses a 'Working Set Manager' and a concept called 'Superfetch' (now SysMain). What is Superfetch designed to do?",
+   opts:["Prevent page faults by locking all process pages in RAM","Proactively preload frequently used data/applications into RAM based on usage patterns","Replace the page table with a flat memory model","Compress old pages to free physical frames"],
+   ans:[1],
+   exp:"Superfetch/SysMain is a Windows service that learns application usage patterns and proactively loads frequently used application data and DLLs into available RAM before they are requested. This reduces perceived startup times. It only uses 'free' memory and immediately releases pages if needed by running processes, so it doesn't compete with active applications."}
+];
+
+// ── STATE ──
+let attempted = new Set(), correct = new Set(), userAnswers = {};
+let curFilter = 'all', allRevealed = false;
+
+function buildAll() {
+  const container = document.getElementById('main');
+  container.innerHTML = '';
+  const topics = [...new Set(Q.map(q=>q.topic))];
+  topics.forEach(t => {
+    const wrap = document.createElement('div');
+    wrap.className = 'topic-group'; wrap.dataset.topic = t;
+    wrap.innerHTML = `<div class="topic-header"><span class="t-label">${t}</span></div>`;
+    Q.filter(q=>q.topic===t).forEach(q => wrap.appendChild(makeCard(q)));
+    container.appendChild(wrap);
+  });
+  applyFilter(curFilter);
+}
+
+function makeCard(q) {
+  const card = document.createElement('div');
+  card.className = 'q-card'; card.dataset.id = q.id; card.dataset.type = q.type; card.dataset.diff = q.diff;
+  const msqNote = q.type==='MSQ' ? `<span class="msq-note">(Select all correct answers)</span>` : '';
+  const opts = q.opts.map((o,i)=>`
+    <div class="option" data-idx="${i}" onclick="pick(${q.id},${i},this)">
+      <span class="opt-lbl">${String.fromCharCode(65+i)}</span>
+      <span class="opt-txt">${o}</span>
+    </div>`).join('');
+  card.innerHTML = `
+    <div class="q-header" onclick="toggleCard(${q.id})">
+      <span class="q-num">Q${q.id}.</span>
+      <div class="q-body">
+        <div class="q-tags">
+          <span class="tag tag-${q.type.toLowerCase()}">${q.type}</span>
+          <span class="tag tag-${q.diff}">${q.diff}</span>
+        </div>
+        <div class="q-text">${q.q}${msqNote}</div>
+      </div>
+      <span class="q-chevron">⌄</span>
+    </div>
+    <div class="q-options" id="opts-${q.id}">${opts}</div>
+    <div class="q-az" id="az-${q.id}" style="padding-bottom:14px">
+      <button class="submit-btn" id="sub-${q.id}" onclick="submitAns(${q.id})">CHECK ANSWER</button>
+    </div>
+    <div class="explanation" id="exp-${q.id}">
+      <div class="exp-lbl">▸ Explanation</div>
+      <div class="ans-reveal" id="arl-${q.id}"></div>
+      <div class="exp-body">${q.exp}</div>
+    </div>`;
+  return card;
+}
+
+function toggleCard(id) {
+  const card = document.querySelector(`.q-card[data-id="${id}"]`);
+  card.classList.toggle('open');
+}
+
+function pick(qid, idx, el) {
+  if(attempted.has(qid)) return;
+  const q = Q.find(x=>x.id===qid);
+  if(q.type==='MCQ') {
+    document.querySelectorAll(`#opts-${qid} .option`).forEach(o=>o.classList.remove('selected'));
+    el.classList.add('selected'); userAnswers[qid]=[idx];
+  } else {
+    el.classList.toggle('selected');
+    userAnswers[qid] = [...document.querySelectorAll(`#opts-${qid} .option.selected`)].map(o=>+o.dataset.idx);
+  }
+}
+
+function submitAns(qid) {
+  if(attempted.has(qid)) return;
+  const ua = userAnswers[qid]||[];
+  if(!ua.length){ showToast('Select an answer first','info'); return; }
+  const q = Q.find(x=>x.id===qid);
+  attempted.add(qid);
+  const ok = JSON.stringify(ua.slice().sort((a,b)=>a-b))===JSON.stringify(q.ans.slice().sort((a,b)=>a-b));
+  if(ok) correct.add(qid);
+  markOptions(qid, q, ua);
+  revealExp(qid, q);
+  const card = document.querySelector(`.q-card[data-id="${qid}"]`);
+  card.classList.add(ok ? 'answered-correct' : 'answered-wrong');
+  document.getElementById(`sub-${qid}`).disabled = true;
+  updateStats();
+}
+
+function markOptions(qid, q, ua) {
+  document.querySelectorAll(`#opts-${qid} .option`).forEach(o=>{
+    const i=+o.dataset.idx; o.classList.add('locked'); o.style.cursor='default';
+    if(q.ans.includes(i)) o.classList.add('correct');
+    else if(ua.includes(i)) o.classList.add('wrong');
+  });
+}
+
+function revealExp(qid, q) {
+  const letters = q.ans.map(i=>String.fromCharCode(65+i)).join(', ');
+  document.getElementById(`arl-${qid}`).textContent = `Correct Answer: ${letters}`;
+  const card = document.querySelector(`.q-card[data-id="${qid}"]`);
+  card.classList.add('open');
+  document.getElementById(`exp-${qid}`).classList.add('show');
+}
+
+function showAllAnswers() {
+  allRevealed = true;
+  Q.forEach(q => {
+    if(!attempted.has(q.id)) {
+      attempted.add(q.id);
+      // Mark correct options with a different class (no wrong marking since no user selection)
+      document.querySelectorAll(`#opts-${q.id} .option`).forEach(o=>{
+        const i=+o.dataset.idx; o.classList.add('locked'); o.style.cursor='default';
+        if(q.ans.includes(i)) o.classList.add('reveal-correct');
+      });
+      revealExp(q.id, q);
+      document.getElementById(`sub-${q.id}`).disabled=true;
+    }
+  });
+  updateStats();
+  showToast('All answers revealed','info');
+}
+
+function resetAll() {
+  if(!confirm('Reset all answers and progress?')) return;
+  attempted.clear(); correct.clear(); userAnswers={}; allRevealed=false;
+  buildAll();
+  updateStats();
+  showToast('Progress reset','success');
+}
+
+function updateStats() {
+  document.getElementById('s-att').textContent = attempted.size;
+  document.getElementById('s-cor').textContent = correct.size;
+  document.getElementById('score-pill').textContent = `Score: ${correct.size} / ${attempted.size}`;
+  document.getElementById('prog').style.width = (attempted.size/Q.length*100)+'%';
+}
+
+function filter(type, btn) {
+  curFilter = type;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilter(type);
+}
+
+function applyFilter(type) {
+  Q.forEach(q => {
+    const card = document.querySelector(`.q-card[data-id="${q.id}"]`);
+    if(!card) return;
+    const show = type==='all' || type===q.type || type===q.diff;
+    card.style.display = show?'':'none';
+  });
+  document.querySelectorAll('.topic-group').forEach(g=>{
+    const vis = [...g.querySelectorAll('.q-card')].some(c=>c.style.display!=='none');
+    g.style.display = vis?'':'none';
+  });
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast toast-${type} show`;
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+buildAll();
+</script>
+</body>
+</html>

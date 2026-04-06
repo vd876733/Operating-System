@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GATE OS — Unit 1: Introduction | Question Bank</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --blue: #1a56db; --blue-light: #e8f0fe; --blue-dark: #1e3a6e;
+    --green: #057a55; --green-light: #def7ec;
+    --red: #c81e1e; --red-light: #fde8e8;
+    --amber: #92400e; --amber-light: #fef3c7;
+    --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+    --gray-400: #9ca3af; --gray-600: #4b5563; --gray-800: #1f2937;
+    --text: #111827; --border: #d1d5db;
+    --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', Arial, sans-serif;
+    background: #f0f4f8;
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    background: linear-gradient(135deg, #1e3a6e 0%, #1a56db 100%);
+    color: #fff;
+    padding: 2.5rem 2rem 2rem;
+    text-align: center;
+  }
+  .site-header .tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+  }
+  .site-header h1 { font-size: 28px; font-weight: 600; margin-bottom: 6px; }
+  .site-header p { font-size: 14px; opacity: 0.85; margin-bottom: 0; }
+
+  /* ── STATS BAR ── */
+  .stats-wrap { background: #fff; border-bottom: 1px solid var(--border); padding: 1rem 2rem; }
+  .stats-inner { max-width: 900px; margin: 0 auto; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+  .stat-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--gray-600); }
+  .stat-num { font-size: 18px; font-weight: 600; color: var(--text); }
+  .stat-sep { color: var(--border); font-size: 18px; }
+
+  /* ── CONTROLS ── */
+  .controls-wrap { background: #fff; border-bottom: 1px solid var(--border); padding: 0.75rem 2rem; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); }
+  .controls-inner { max-width: 900px; margin: 0 auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .controls-label { font-size: 12px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px; }
+  .pill {
+    font-size: 12px; font-weight: 500; padding: 5px 14px;
+    border-radius: 20px; border: 1.5px solid var(--border);
+    background: #fff; color: var(--gray-600);
+    cursor: pointer; transition: all 0.15s; text-decoration: none;
+  }
+  .pill:hover { border-color: var(--blue); color: var(--blue); }
+  .pill.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .pill.active-green { background: var(--green); border-color: var(--green); color: #fff; }
+  .pill.active-amber { background: #d97706; border-color: #d97706; color: #fff; }
+  .pill.active-red { background: var(--red); border-color: var(--red); color: #fff; }
+
+  /* ── SCORE BAR ── */
+  .score-wrap { max-width: 900px; margin: 1.5rem auto 0; padding: 0 2rem; }
+  .score-bar-bg { height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
+  .score-bar-fill { height: 100%; background: var(--blue); border-radius: 3px; transition: width 0.4s ease; width: 0%; }
+  .score-label { font-size: 12px; color: var(--gray-400); }
+
+  /* ── MAIN ── */
+  .main { max-width: 900px; margin: 0 auto; padding: 1.5rem 2rem 4rem; }
+
+  /* ── QUESTION CARD ── */
+  .q-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.2s;
+  }
+  .q-card:hover { box-shadow: var(--shadow-md); }
+  .q-card.revealed { border-color: #93c5fd; }
+
+  .q-header {
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--gray-100);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .q-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .q-num { font-size: 12px; font-weight: 600; color: var(--gray-400); }
+
+  .badge {
+    font-size: 10px; font-weight: 600; padding: 2px 8px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .badge-mcq { background: var(--blue-light); color: var(--blue-dark); }
+  .badge-msq { background: #fef3c7; color: #78350f; border: 1px solid #fcd34d; }
+  .badge-basic { background: var(--green-light); color: var(--green); }
+  .badge-moderate { background: #fef3c7; color: var(--amber); }
+  .badge-advanced { background: var(--red-light); color: var(--red); }
+  .badge-topic { background: var(--gray-100); color: var(--gray-600); font-size: 10px; }
+
+  .q-body { padding: 1.25rem; }
+  .q-text {
+    font-size: 14.5px; font-weight: 500; color: var(--text);
+    line-height: 1.65; margin-bottom: 1rem;
+  }
+  .q-text code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px; background: var(--gray-100);
+    padding: 1px 6px; border-radius: 4px; color: #b91c1c;
+  }
+
+  /* ── OPTIONS ── */
+  .options { display: flex; flex-direction: column; gap: 7px; margin-bottom: 1rem; }
+  .opt {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 14px; border-radius: 8px;
+    border: 1.5px solid var(--border);
+    cursor: pointer; transition: all 0.15s;
+    font-size: 13.5px; color: var(--text); line-height: 1.5;
+  }
+  .opt:hover { border-color: #93c5fd; background: var(--blue-light); }
+  .opt.selected { border-color: var(--blue); background: var(--blue-light); }
+  .opt.correct { border-color: var(--green); background: var(--green-light); }
+  .opt.wrong { border-color: var(--red); background: var(--red-light); }
+  .opt-key {
+    font-weight: 600; font-size: 13px; min-width: 20px;
+    color: var(--gray-400); flex-shrink: 0; padding-top: 1px;
+  }
+  .opt.selected .opt-key { color: var(--blue); }
+  .opt.correct .opt-key { color: var(--green); }
+  .opt.wrong .opt-key { color: var(--red); }
+
+  /* ── MSQLABEL ── */
+  .msq-hint {
+    font-size: 11px; color: var(--amber); font-weight: 500;
+    margin-bottom: 8px; display: flex; align-items: center; gap: 4px;
+  }
+
+  /* ── ACTIONS ── */
+  .q-actions { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+  .btn {
+    font-size: 13px; font-weight: 500; padding: 7px 18px;
+    border-radius: 8px; border: 1.5px solid var(--border);
+    background: #fff; color: var(--text);
+    cursor: pointer; transition: all 0.15s; font-family: inherit;
+  }
+  .btn:hover { background: var(--gray-100); }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .btn-primary:hover { background: #1648c0; }
+
+  /* ── EXPLANATION ── */
+  .explanation {
+    margin-top: 1rem; padding: 1rem 1.25rem;
+    background: #f0f9ff; border-top: 1px solid #bae6fd;
+    display: none;
+  }
+  .explanation.show { display: block; }
+  .exp-result {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 10px;
+  }
+  .exp-result-icon {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+  .correct-icon { background: var(--green-light); color: var(--green); }
+  .wrong-icon { background: var(--red-light); color: var(--red); }
+  .exp-result-text { font-size: 13px; font-weight: 600; }
+  .correct-text { color: var(--green); }
+  .wrong-text { color: var(--red); }
+  .ans-label {
+    font-size: 12px; color: var(--gray-600);
+    background: var(--gray-100); border: 1px solid var(--border);
+    border-radius: 4px; padding: 2px 10px; margin-left: 4px;
+  }
+  .exp-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--blue); margin-bottom: 6px; }
+  .exp-body { font-size: 13.5px; color: var(--gray-600); line-height: 1.7; }
+  .exp-body code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; background: #e0f2fe;
+    padding: 1px 5px; border-radius: 3px; color: #0369a1;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    .controls-wrap, .score-wrap { display: none; }
+    .q-card { break-inside: avoid; box-shadow: none; }
+    .explanation { display: block !important; }
+    .site-header { background: var(--blue-dark) !important; -webkit-print-color-adjust: exact; }
+    body { background: #fff; }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .main { padding: 1rem; }
+    .site-header { padding: 1.5rem 1rem 1.25rem; }
+    .site-header h1 { font-size: 21px; }
+    .controls-wrap { padding: 0.75rem 1rem; }
+    .score-wrap { padding: 0 1rem; }
+  }
+
+  /* ── SECTION DIVIDER ── */
+  .section-divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 2rem 0 1.25rem; font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-400);
+  }
+  .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--gray-200); }
+
+  /* ── TOP NAV ── */
+  .toc-wrap { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+  .toc-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--gray-400); margin-bottom: 8px; }
+  .toc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px; }
+  .toc-item { font-size: 12px; color: var(--blue); text-decoration: none; padding: 3px 0; }
+  .toc-item:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <div class="tag">Formative Assessment · GATE Standard</div>
+  <h1>Operating Systems — Unit 1: Introduction</h1>
+  <p>30 Questions &nbsp;·&nbsp; MCQ + MSQ &nbsp;·&nbsp; Basic → Moderate → Advanced</p>
+</div>
+
+<!-- Stats -->
+<div class="stats-wrap">
+  <div class="stats-inner">
+    <div class="stat-item"><span class="stat-num">30</span>&nbsp;Questions</div>
+    <span class="stat-sep">·</span>
+    <div class="stat-item"><span class="stat-num">18</span>&nbsp;MCQ</div>
+    <span class="stat-sep">·</span>
+    <div class="stat-item"><span class="stat-num">12</span>&nbsp;MSQ</div>
+    <span class="stat-sep">·</span>
+    <div class="stat-item">Attempted: <strong id="s-attempted" style="margin-left:4px">0</strong></div>
+    <span class="stat-sep">·</span>
+    <div class="stat-item">Correct: <strong id="s-correct" style="margin-left:4px;color:var(--green)">0</strong></div>
+    <span class="stat-sep">·</span>
+    <div class="stat-item">Score: <strong id="s-score" style="margin-left:4px;color:var(--blue)">0%</strong></div>
+  </div>
+</div>
+
+<!-- Sticky filter bar -->
+<div class="controls-wrap">
+  <div class="controls-inner">
+    <span class="controls-label">Filter</span>
+    <span class="pill active" onclick="setFilter('all',this)">All (30)</span>
+    <span class="pill" onclick="setFilter('MCQ',this)">MCQ</span>
+    <span class="pill" onclick="setFilter('MSQ',this)">MSQ</span>
+    <span class="pill" onclick="setFilter('Basic',this)" style="border-color:#6ee7b7;color:var(--green)">Basic</span>
+    <span class="pill" onclick="setFilter('Moderate',this)" style="border-color:#fcd34d;color:var(--amber)">Moderate</span>
+    <span class="pill" onclick="setFilter('Advanced',this)" style="border-color:#fca5a5;color:var(--red)">Advanced</span>
+    <span style="flex:1"></span>
+    <button class="btn" onclick="revealAll()" style="font-size:12px;padding:5px 14px">Show All Answers</button>
+    <button class="btn" onclick="resetAll()" style="font-size:12px;padding:5px 14px">Reset All</button>
+  </div>
+</div>
+
+<div class="score-wrap">
+  <div class="score-bar-bg"><div class="score-bar-fill" id="score-bar"></div></div>
+  <div class="score-label" id="score-label">0 of 30 answered</div>
+</div>
+
+<div class="main" id="main">
+
+  <div class="toc-wrap">
+    <div class="toc-title">Topics covered in Unit 1</div>
+    <div class="toc-grid">
+      <a class="toc-item" href="#q1">Von Neumann Architecture</a>
+      <a class="toc-item" href="#q2">Role of OS</a>
+      <a class="toc-item" href="#q3">Hardware Components</a>
+      <a class="toc-item" href="#q4">OS Types (RTOS)</a>
+      <a class="toc-item" href="#q5">Monolithic Kernel</a>
+      <a class="toc-item" href="#q6">Microkernel</a>
+      <a class="toc-item" href="#q7">OS Objectives</a>
+      <a class="toc-item" href="#q8">System Stack</a>
+      <a class="toc-item" href="#q10">Exokernel</a>
+      <a class="toc-item" href="#q13">OS Evolution</a>
+      <a class="toc-item" href="#q14">Multiprocessor OS</a>
+      <a class="toc-item" href="#q20">Multicore OS</a>
+      <a class="toc-item" href="#q26">Hardware-OS Communication</a>
+      <a class="toc-item" href="#q27">NUMA Design</a>
+      <a class="toc-item" href="#q29">OS Design Considerations</a>
+    </div>
+  </div>
+
+  <div id="qlist"></div>
+</div>
+
+<script>
+const Qs = [
+  {id:1,type:"MCQ",diff:"Basic",topic:"Von Neumann Architecture",
+   q:"In the Von Neumann architecture, the CPU fetches instructions from memory using the:",
+   opts:["ALU","Program Counter (PC)","Stack Pointer","Instruction Register"],
+   ans:[1],
+   exp:"The Program Counter (PC) holds the address of the next instruction to be fetched from memory. After each fetch, PC is incremented. The IR holds the fetched instruction; ALU performs arithmetic; the stack pointer manages the call stack."
+  },
+  {id:2,type:"MCQ",diff:"Basic",topic:"Role of OS",
+   q:"Which of the following BEST describes the primary role of an Operating System?",
+   opts:["To provide a GUI for user interaction","To act as an intermediary between hardware and user programs","To compile and execute user programs","To manage only memory and disk I/O"],
+   ans:[1],
+   exp:"The OS is a resource manager and abstraction layer. It mediates between hardware and application software, providing services via system calls. It is NOT limited to GUI, memory, or compilation."
+  },
+  {id:3,type:"MCQ",diff:"Basic",topic:"Hardware Components",
+   q:"The component that temporarily holds data being transferred between the CPU and main memory is the:",
+   opts:["Cache","Register","Memory Buffer Register (MBR)","Memory Address Register (MAR)"],
+   ans:[2],
+   exp:"The Memory Buffer Register (MBR/MDR) holds the data fetched from or to be written to memory. The MAR holds the address, registers hold operands, and cache is a fast memory hierarchy level — not specifically for data-in-transit to/from memory."
+  },
+  {id:4,type:"MCQ",diff:"Basic",topic:"OS Types",
+   q:"An OS that guarantees task completion within a specific time bound is called a:",
+   opts:["Batch OS","Time-sharing OS","Real-Time OS (RTOS)","Distributed OS"],
+   ans:[2],
+   exp:"RTOS provides deterministic timing guarantees (deadlines). Hard RTOS must never miss a deadline; soft RTOS tolerates occasional misses. Examples: VxWorks, FreeRTOS. Batch OS queues jobs; time-sharing gives the illusion of simultaneous use."
+  },
+  {id:5,type:"MCQ",diff:"Basic",topic:"OS Architecture — Monolithic",
+   q:"In a Monolithic OS kernel, which statement is TRUE?",
+   opts:["All OS services run in user space","The kernel is split into small isolated servers","All OS services run in kernel space as a single large program","The kernel only provides IPC and basic scheduling"],
+   ans:[2],
+   exp:"Monolithic kernels (e.g., early Linux, traditional Unix) include all OS services — file system, device drivers, scheduling, memory management — in a single executable running in kernel space. This provides speed but reduces modularity and fault isolation."
+  },
+  {id:6,type:"MCQ",diff:"Moderate",topic:"OS Architecture — Microkernel",
+   q:"Which OS architecture provides the MOST fault isolation by running most OS services in user space?",
+   opts:["Monolithic Kernel","Microkernel","Exokernel","Hybrid Kernel"],
+   ans:[1],
+   exp:"Microkernels (e.g., Mach, MINIX, seL4) keep only the most essential services (IPC, basic scheduling, memory protection) in kernel space. All other services run as user-space servers. A crash in a driver doesn't crash the kernel."
+  },
+  {id:7,type:"MSQ",diff:"Moderate",topic:"OS Objectives",
+   q:"Which of the following are PRIMARY objectives of an Operating System? (Select ALL that apply)",
+   opts:["Provide abstractions to simplify hardware complexity","Maximize CPU utilization","Compile user applications","Manage and allocate system resources","Provide a secure execution environment"],
+   ans:[0,1,3,4],
+   exp:"OS objectives: (A) Abstractions — hide hardware details behind clean interfaces. (B) CPU utilization — scheduling for efficiency. (D) Resource management — CPU, memory, I/O, files. (E) Security and protection. Compiling applications (C) is the job of compilers, not the OS."
+  },
+  {id:8,type:"MCQ",diff:"Basic",topic:"System Stack",
+   q:"The system stack grows in which direction on most architectures?",
+   opts:["From lower address to higher address","From higher address to lower address","Bidirectionally","It is fixed and does not grow"],
+   ans:[1],
+   exp:"On most architectures (x86, ARM), the stack grows downward — from higher memory addresses toward lower addresses. The heap grows upward. This is a fundamental memory layout concept tested in GATE."
+  },
+  {id:9,type:"MCQ",diff:"Moderate",topic:"Von Neumann Architecture",
+   q:"The Von Neumann bottleneck refers to:",
+   opts:["Limited CPU register count","Limited bandwidth between CPU and memory causing performance limitation","Inability of the CPU to handle interrupts","The slow speed of secondary storage"],
+   ans:[1],
+   exp:"Von Neumann bottleneck: since instructions and data share the same bus and memory, the CPU often has to wait for memory access. Modern solutions include caches, wider buses, Harvard architecture (separate instruction/data paths), and pipelining."
+  },
+  {id:10,type:"MSQ",diff:"Moderate",topic:"OS Architecture — Exokernel",
+   q:"Which of the following are TRUE about the Exokernel design philosophy? (Select ALL that apply)",
+   opts:["It exposes hardware resources directly to applications","Library OSes implement OS abstractions above the exokernel","It provides full virtual machines to applications","Applications can implement their own resource management policies","It maximizes the performance of hardware abstractions"],
+   ans:[0,1,3,4],
+   exp:"Exokernel (MIT, 1994) multiplexes hardware with minimum abstraction. 'Library OSes' (LibOS) run above it and implement traditional abstractions. Applications choose their own resource policies — maximizing performance. It does NOT provide full VMs (C); that is the job of Type-1 hypervisors."
+  },
+  {id:11,type:"MCQ",diff:"Advanced",topic:"OS Architecture — Microkernel",
+   q:"Consider a microkernel OS. A file system crash will:",
+   opts:["Crash the entire OS","Only affect the file system server process, not the kernel","Corrupt the kernel's memory space","Prevent the OS from scheduling any process"],
+   ans:[1],
+   exp:"In a microkernel, the file system runs as a user-space server. A crash affects only that server process. The microkernel itself (IPC, scheduling, basic memory protection) remains intact. The file server can be restarted without rebooting — the key advantage over monolithic kernels."
+  },
+  {id:12,type:"MCQ",diff:"Basic",topic:"Hardware Components",
+   q:"Which bus is responsible for carrying the address of memory locations in a computer system?",
+   opts:["Data Bus","Address Bus","Control Bus","System Bus"],
+   ans:[1],
+   exp:"The Address Bus carries the memory address the CPU wants to read from or write to. The Data Bus carries the actual data. The Control Bus carries control signals (read/write). Together these form the System Bus."
+  },
+  {id:13,type:"MCQ",diff:"Moderate",topic:"OS Evolution",
+   q:"Multiprogramming was introduced primarily to:",
+   opts:["Allow multiple users to interact simultaneously","Improve CPU utilization by keeping it busy while I/O occurs","Enable real-time task processing","Allow programs larger than main memory to execute"],
+   ans:[1],
+   exp:"Multiprogramming keeps multiple jobs in memory. When one job waits for I/O, the CPU switches to another job — improving CPU utilization. Time-sharing (A) adds preemption for interactivity. Virtual memory (D) solves program size. RTOS (C) handles real-time."
+  },
+  {id:14,type:"MSQ",diff:"Advanced",topic:"Multiprocessor OS Design",
+   q:"Which of the following are design considerations SPECIFIC to a multiprocessor OS? (Select ALL that apply)",
+   opts:["Cache coherency protocols","Symmetric vs Asymmetric multiprocessing (SMP vs AMP)","Single-threaded kernel design","Load balancing across CPUs","NUMA (Non-Uniform Memory Access) awareness"],
+   ans:[0,1,3,4],
+   exp:"Multiprocessor OS must handle: (A) Cache coherency — keeping CPU caches consistent (MESI protocol). (B) SMP vs AMP — whether all CPUs run the same OS copy. (D) Load balancing — distributing processes evenly. (E) NUMA — memory closer to some CPUs is faster. Single-threaded kernel (C) is a bottleneck and is avoided."
+  },
+  {id:15,type:"MCQ",diff:"Advanced",topic:"OS Architecture — Linux",
+   q:"The Linux kernel is best classified as:",
+   opts:["Pure microkernel","Pure monolithic kernel","Modular monolithic kernel","Exokernel"],
+   ans:[2],
+   exp:"Linux is a modular monolithic kernel. It runs all OS services in kernel space (monolithic) but supports loadable kernel modules (LKMs) that can be inserted/removed at runtime via insmod/modprobe. This provides flexibility without microkernel IPC overhead."
+  },
+  {id:16,type:"MCQ",diff:"Moderate",topic:"Resources and Abstractions",
+   q:"In OS terminology, a 'file' is an abstraction over which hardware resource?",
+   opts:["CPU registers","Secondary storage (disk)","Network interface","RAM"],
+   ans:[1],
+   exp:"A file is a logical abstraction that the OS provides over physical disk storage. The OS hides details of disk sectors, block allocation, and fragmentation. Processes, threads, and virtual memory abstract CPU and RAM respectively."
+  },
+  {id:17,type:"MCQ",diff:"Advanced",topic:"Von Neumann Architecture",
+   q:"In a Von Neumann machine, the fetch-decode-execute cycle involves which correct sequence?",
+   opts:["MAR←PC → MBR←Mem[MAR] → IR←MBR → Execute","MBR←PC → MAR←MBR → IR←Mem[MAR] → Execute","PC←MAR → IR←MBR → Execute","MAR←IR → MBR←PC → Execute"],
+   ans:[0],
+   exp:"Correct cycle: (1) MAR ← PC (load address of instruction), (2) MBR ← Memory[MAR] (fetch instruction word), (3) IR ← MBR (load instruction into IR), (4) PC ← PC+1 (advance), (5) Decode and Execute. This is the fundamental Von Neumann fetch-decode-execute cycle."
+  },
+  {id:18,type:"MSQ",diff:"Basic",topic:"OS Types — Mobile",
+   q:"Which of the following are characteristics of a Mobile OS? (Select ALL that apply)",
+   opts:["Power consumption optimization","Rich touch-based interface support","Hard real-time deadline guarantees","App sandboxing for security","Drivers for hardware sensors (GPS, gyroscope, camera)"],
+   ans:[0,1,3,4],
+   exp:"Mobile OS (iOS, Android): (A) Battery/power management is critical. (B) Touch UI is the primary input. (D) Sandboxing isolates apps for security. (E) GPS, accelerometer, gyroscope, camera drivers are included. Hard RTOS guarantees (C) are NOT a feature of general mobile OS — they use soft real-time."
+  },
+  {id:19,type:"MCQ",diff:"Moderate",topic:"System Call Interface",
+   q:"Which of the following correctly describes the role of the system call interface in an OS?",
+   opts:["It directly executes user code in kernel mode","It provides a programmatic interface through which user processes request OS services","It replaces the hardware interrupt mechanism","It is only used for inter-process communication"],
+   ans:[1],
+   exp:"The system call interface (e.g., POSIX API on Unix/Linux) is the boundary between user space and kernel space. User programs invoke system calls to request privileged OS services. The CPU switches from user mode to kernel mode via a trap/software interrupt instruction."
+  },
+  {id:20,type:"MCQ",diff:"Advanced",topic:"Multicore OS Design",
+   q:"A process runs on a quad-core CPU. If it is single-threaded, what is the maximum CPU utilization it can achieve across all cores?",
+   opts:["100% (all 4 cores)","50% (2 cores)","25% (1 core)","Depends on OS scheduler"],
+   ans:[2],
+   exp:"A single-threaded process can only run on one core at a time. On a 4-core system, the maximum utilization is 1/4 = 25%. To utilize all cores, a process must spawn multiple threads. This is why parallel programming matters on multicore CPUs."
+  },
+  {id:21,type:"MCQ",diff:"Moderate",topic:"OS Evolution",
+   q:"Which OS generation first introduced the concept of time-sharing to allow interactive user sessions?",
+   opts:["First generation (vacuum tubes)","Second generation (transistors, batch)","Third generation (ICs, multiprogramming)","Fourth generation (microprocessors)"],
+   ans:[2],
+   exp:"Third generation OS (1960s–80s, ICs) introduced both multiprogramming and time-sharing. CTSS at MIT and MULTICS introduced interactive sessions, allowing multiple users to share a single computer interactively."
+  },
+  {id:22,type:"MSQ",diff:"Advanced",topic:"OS Architecture — Microkernel Tradeoffs",
+   q:"Compared to monolithic kernels, which of the following are TRUE disadvantages of microkernels? (Select ALL that apply)",
+   opts:["Higher inter-process communication (IPC) overhead","Reduced fault isolation","Increased context switch frequency for OS services","Harder to implement correctly","More vulnerable to driver crashes"],
+   ans:[0,2,3],
+   exp:"Microkernels suffer from: (A) Higher IPC overhead — services communicate via message passing instead of function calls. (C) More context switches — each OS service request crosses user-kernel boundary multiple times. (D) Implementation complexity — designing safe IPC and server protocols is hard. They actually IMPROVE fault isolation (B is false) and are MORE resilient to driver crashes (E is false)."
+  },
+  {id:23,type:"MCQ",diff:"Basic",topic:"OS Kernel Functions",
+   q:"Which of the following is NOT a function of the OS kernel?",
+   opts:["Memory management","CPU scheduling","Rendering web pages","Device driver management"],
+   ans:[2],
+   exp:"Rendering web pages is done by web browsers (application software), not the kernel. The kernel is responsible for memory management, CPU scheduling, device drivers, file systems, and I/O management."
+  },
+  {id:24,type:"MCQ",diff:"Advanced",topic:"OS Abstractions — Process",
+   q:"An OS provides the abstraction of a 'process' over which actual hardware resource(s)?",
+   opts:["Only CPU","Only Memory","CPU and Memory together","CPU, Memory, and I/O devices"],
+   ans:[3],
+   exp:"A process is a full abstraction of an executing program. It requires: CPU (registers, PC), Memory (virtual address space — code, data, stack, heap), and I/O (open file descriptors, network connections, device handles). The OS virtualizes all these resources per-process."
+  },
+  {id:25,type:"MCQ",diff:"Moderate",topic:"OS as Resource Allocator",
+   q:"When an OS is described as a 'resource allocator', which of the following is the MOST accurate interpretation?",
+   opts:["The OS owns all hardware and never releases it","The OS decides how to allocate CPU, memory, and I/O fairly and efficiently among competing processes","The OS only allocates memory and leaves CPU management to hardware","The OS allocates resources only to privileged processes"],
+   ans:[1],
+   exp:"As a resource allocator, the OS arbitrates access to CPU (via scheduling), memory (via memory manager), I/O (via device drivers), and files (via file system). The goals are fairness, efficiency, and preventing starvation. Resources are dynamically allocated and de-allocated."
+  },
+  {id:26,type:"MSQ",diff:"Moderate",topic:"Hardware-OS Communication",
+   q:"Which of the following mechanisms allow hardware to communicate with the OS? (Select ALL that apply)",
+   opts:["Interrupts","Direct Memory Access (DMA)","Polling","System calls","Trap instructions"],
+   ans:[0,1,2],
+   exp:"Hardware-to-OS communication: (A) Interrupts — hardware signals CPU asynchronously (disk done, keyboard press). (B) DMA — device transfers data directly to memory, then interrupts CPU. (C) Polling — CPU continuously checks device status (less efficient). System calls (D) and traps (E) are user-space-to-OS communication, not hardware-to-OS."
+  },
+  {id:27,type:"MCQ",diff:"Advanced",topic:"NUMA Design",
+   q:"In a NUMA (Non-Uniform Memory Access) multiprocessor system, the OS scheduler should ideally:",
+   opts:["Randomly assign processes to any CPU","Assign processes to CPUs close to their data's memory","Use a single global run queue","Disable local caches to avoid coherency issues"],
+   ans:[1],
+   exp:"NUMA systems have faster access to 'local' memory (close to the CPU) vs 'remote' memory. NUMA-aware schedulers pin processes/threads to CPUs close to their memory pages to reduce latency. Linux's NUMA-balancing feature implements this. Random assignment ignores locality."
+  },
+  {id:28,type:"MCQ",diff:"Moderate",topic:"OS Execution Modes",
+   q:"The CPU switches from user mode to kernel mode when:",
+   opts:["A user program reads a local variable","A hardware interrupt occurs or a system call is made","The OS context switches between two user processes","A user program performs floating point arithmetic"],
+   ans:[1],
+   exp:"Mode switch to kernel mode occurs via: (1) Hardware interrupts (e.g., timer, I/O completion), (2) Software interrupts/traps (system calls), (3) Exceptions (divide-by-zero, page fault). Reading local variables and arithmetic do NOT cause kernel-mode entry."
+  },
+  {id:29,type:"MSQ",diff:"Advanced",topic:"Multicore OS Design",
+   q:"Which of the following are TRUE about the design of a Multicore OS? (Select ALL that apply)",
+   opts:["Kernel data structures must be protected with fine-grained locking","A single global kernel lock is the most efficient solution","Per-CPU run queues can reduce lock contention","Cache affinity must be considered during scheduling","TLB shootdowns are required when modifying shared page tables"],
+   ans:[0,2,3,4],
+   exp:"Multicore OS design: (A) Fine-grained locking avoids bottlenecks on shared kernel structures. (C) Per-CPU run queues reduce contention. (D) Cache-affine scheduling keeps a process on the same CPU to reuse warm cache. (E) When one CPU modifies a page table, other CPUs must invalidate their TLBs via IPI (TLB shootdown). The Big Kernel Lock (B) was removed from Linux as a scalability bottleneck."
+  },
+  {id:30,type:"MCQ",diff:"Advanced",topic:"OS Architecture — Loadable Modules",
+   q:"An OS developer wants to implement a new file system without modifying the kernel binary and without rebooting. Which OS architecture best supports this?",
+   opts:["Pure monolithic kernel","Microkernel","Modular monolithic kernel (with loadable modules)","Exokernel"],
+   ans:[2],
+   exp:"A modular monolithic kernel (like Linux) supports Loadable Kernel Modules (LKMs). A new file system can be compiled as a module and inserted at runtime using insmod/modprobe without rebooting. The question says 'without modifying kernel binary', ruling out pure monolithic. Modular monolithic is the most practical answer matching Linux's approach."
+  }
+];
+
+let state = {};
+Qs.forEach(q => { state[q.id] = { sel: [], revealed: false }; });
+let activeFilter = 'all';
+
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.pill').forEach(p => {
+    p.classList.remove('active','active-green','active-amber','active-red');
+  });
+  if(f==='Basic') el.classList.add('active-green');
+  else if(f==='Moderate') el.classList.add('active-amber');
+  else if(f==='Advanced') el.classList.add('active-red');
+  else el.classList.add('active');
+  renderAll();
+}
+
+function updateStats() {
+  let att = 0, cor = 0;
+  Qs.forEach(q => {
+    const s = state[q.id];
+    if(s.revealed) {
+      att++;
+      if([...s.sel].sort().join(',') === [...q.ans].sort().join(',')) cor++;
+    }
+  });
+  document.getElementById('s-attempted').textContent = att;
+  document.getElementById('s-correct').textContent = cor;
+  document.getElementById('s-score').textContent = att > 0 ? Math.round(cor/att*100)+'%' : '0%';
+  const pct = Math.round(att/Qs.length*100);
+  document.getElementById('score-bar').style.width = pct+'%';
+  document.getElementById('score-label').textContent = att + ' of ' + Qs.length + ' answered';
+}
+
+function toggleOpt(qid, idx) {
+  const q = Qs.find(x=>x.id===qid);
+  const s = state[qid];
+  if(s.revealed) return;
+  if(q.type==='MCQ') { s.sel = [idx]; }
+  else {
+    if(s.sel.includes(idx)) s.sel = s.sel.filter(x=>x!==idx);
+    else s.sel.push(idx);
+  }
+  refreshCard(q);
+}
+
+function checkAnswer(qid) {
+  const s = state[qid];
+  if(s.sel.length===0) return;
+  s.revealed = true;
+  const q = Qs.find(x=>x.id===qid);
+  refreshCard(q);
+  updateStats();
+}
+
+function resetCard(qid) {
+  state[qid] = { sel: [], revealed: false };
+  refreshCard(Qs.find(x=>x.id===qid));
+  updateStats();
+}
+
+function revealAll() {
+  Qs.forEach(q => {
+    if(!state[q.id].revealed) {
+      state[q.id].sel = [...q.ans];
+      state[q.id].revealed = true;
+    }
+  });
+  renderAll();
+  updateStats();
+}
+
+function resetAll() {
+  Qs.forEach(q => { state[q.id] = { sel: [], revealed: false }; });
+  renderAll();
+  updateStats();
+}
+
+function refreshCard(q) {
+  const el = document.getElementById('card-'+q.id);
+  if(!el) return;
+  el.innerHTML = buildCard(q);
+  if(state[q.id].revealed) el.classList.add('revealed');
+  else el.classList.remove('revealed');
+}
+
+function buildCard(q) {
+  const s = state[q.id];
+  const letters = ['A','B','C','D','E'];
+  const ansList = q.ans.map(i=>letters[i]).join(', ');
+  const correct = [...s.sel].sort().join(',') === [...q.ans].sort().join(',');
+
+  const optsHtml = q.opts.map((opt,i) => {
+    let cls = 'opt';
+    if(s.revealed) {
+      if(q.ans.includes(i)) cls += ' correct';
+      else if(s.sel.includes(i)) cls += ' wrong';
+    } else {
+      if(s.sel.includes(i)) cls += ' selected';
+    }
+    return `<div class="${cls}" onclick="toggleOpt(${q.id},${i})"><span class="opt-key">${letters[i]}.</span><span>${opt}</span></div>`;
+  }).join('');
+
+  let actions = '';
+  if(!s.revealed) {
+    actions = `<button class="btn btn-primary" onclick="checkAnswer(${q.id})">Check Answer</button>`;
+    if(s.sel.length>0) actions += `<button class="btn" onclick="resetCard(${q.id})">Reset</button>`;
+  } else {
+    actions = `<button class="btn" onclick="resetCard(${q.id})">Try Again</button>`;
+  }
+
+  let expHtml = '';
+  if(s.revealed) {
+    const icon = correct
+      ? `<div class="exp-result-icon correct-icon">✓</div>`
+      : `<div class="exp-result-icon wrong-icon">✗</div>`;
+    const txt = correct
+      ? `<span class="exp-result-text correct-text">Correct!</span>`
+      : `<span class="exp-result-text wrong-text">Incorrect</span>`;
+    expHtml = `<div class="explanation show">
+      <div class="exp-result">${icon}${txt}<span class="ans-label">Answer: ${ansList}</span></div>
+      <div class="exp-title">Explanation</div>
+      <div class="exp-body">${q.exp}</div>
+    </div>`;
+  }
+
+  const msqHint = q.type==='MSQ' ? `<div class="msq-hint">⚠ Select all correct options</div>` : '';
+
+  return `
+    <div class="q-header">
+      <div class="q-meta">
+        <span class="q-num">Q${q.id}</span>
+        <span class="badge badge-${q.type.toLowerCase()}">${q.type}</span>
+        <span class="badge badge-${q.diff.toLowerCase()}">${q.diff}</span>
+        <span class="badge badge-topic">${q.topic}</span>
+      </div>
+    </div>
+    <div class="q-body">
+      <div class="q-text">${q.q}</div>
+      ${msqHint}
+      <div class="options">${optsHtml}</div>
+      <div class="q-actions">${actions}</div>
+    </div>
+    ${expHtml}
+  `;
+}
+
+function renderAll() {
+  const filtered = Qs.filter(q => {
+    if(activeFilter==='all') return true;
+    if(activeFilter==='MCQ'||activeFilter==='MSQ') return q.type===activeFilter;
+    return q.diff===activeFilter;
+  });
+
+  const container = document.getElementById('qlist');
+  container.innerHTML = '';
+
+  // Group by difficulty
+  const groups = { Basic: [], Moderate: [], Advanced: [] };
+  filtered.forEach(q => groups[q.diff].push(q));
+
+  ['Basic','Moderate','Advanced'].forEach(diff => {
+    if(groups[diff].length === 0) return;
+    if(activeFilter==='all') {
+      const divider = document.createElement('div');
+      divider.className = 'section-divider';
+      const colors = {Basic:'var(--green)',Moderate:'var(--amber)',Advanced:'var(--red)'};
+      divider.innerHTML = `<span style="color:${colors[diff]}">${diff}</span>`;
+      container.appendChild(divider);
+    }
+    groups[diff].forEach(q => {
+      const el = document.createElement('div');
+      el.className = 'q-card' + (state[q.id].revealed ? ' revealed' : '');
+      el.id = 'card-'+q.id;
+      el.innerHTML = buildCard(q);
+      container.appendChild(el);
+    });
+  });
+}
+
+renderAll();
+updateStats();
+</script>
+</body>
+</html>

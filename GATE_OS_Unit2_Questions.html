@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GATE OS — Unit 2: Process Management | Question Bank</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --blue:#1a56db; --blue-light:#e8f0fe; --blue-dark:#1e3a6e;
+    --green:#057a55; --green-light:#def7ec;
+    --red:#c81e1e; --red-light:#fde8e8;
+    --amber:#92400e; --amber-light:#fef3c7;
+    --gray-50:#f9fafb; --gray-100:#f3f4f6; --gray-200:#e5e7eb;
+    --gray-400:#9ca3af; --gray-600:#4b5563; --gray-800:#1f2937;
+    --text:#111827; --border:#d1d5db;
+    --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+    --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.05);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+
+  body{
+    font-family:'IBM Plex Sans',Arial,sans-serif;
+    background:#f0f4f8;color:var(--text);line-height:1.6;min-height:100vh;
+  }
+
+  .site-header{
+    background:linear-gradient(135deg,#1e3a6e 0%,#1a56db 100%);
+    color:#fff;padding:2.5rem 2rem 2rem;text-align:center;
+  }
+  .site-header .tag{
+    display:inline-block;background:rgba(255,255,255,.2);
+    border:1px solid rgba(255,255,255,.3);color:#fff;
+    font-size:11px;font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;padding:3px 12px;border-radius:20px;margin-bottom:12px;
+  }
+  .site-header h1{font-size:28px;font-weight:600;margin-bottom:6px}
+  .site-header p{font-size:14px;opacity:.85}
+
+  .stats-wrap{background:#fff;border-bottom:1px solid var(--border);padding:1rem 2rem}
+  .stats-inner{max-width:960px;margin:0 auto;display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+  .stat-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--gray-600)}
+  .stat-num{font-size:18px;font-weight:600;color:var(--text)}
+  .stat-sep{color:var(--border);font-size:18px}
+
+  .controls-wrap{
+    background:#fff;border-bottom:1px solid var(--border);
+    padding:.75rem 2rem;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);
+  }
+  .controls-inner{max-width:960px;margin:0 auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .controls-label{font-size:12px;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-right:4px}
+
+  .pill{
+    font-size:12px;font-weight:500;padding:5px 14px;border-radius:20px;
+    border:1.5px solid var(--border);background:#fff;color:var(--gray-600);
+    cursor:pointer;transition:all .15s;
+  }
+  .pill:hover{border-color:var(--blue);color:var(--blue)}
+  .pill.active{background:var(--blue);border-color:var(--blue);color:#fff}
+  .pill.active-green{background:var(--green);border-color:var(--green);color:#fff}
+  .pill.active-amber{background:#d97706;border-color:#d97706;color:#fff}
+  .pill.active-red{background:var(--red);border-color:var(--red);color:#fff}
+
+  .score-wrap{max-width:960px;margin:1.5rem auto 0;padding:0 2rem}
+  .score-bar-bg{height:6px;background:var(--gray-200);border-radius:3px;overflow:hidden;margin-bottom:6px}
+  .score-bar-fill{height:100%;background:var(--blue);border-radius:3px;transition:width .4s ease;width:0%}
+  .score-label{font-size:12px;color:var(--gray-400)}
+
+  .main{max-width:960px;margin:0 auto;padding:1.5rem 2rem 4rem}
+
+  .toc-wrap{background:#fff;border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem}
+  .toc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-400);margin-bottom:8px}
+  .toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:5px}
+  .toc-item{font-size:12px;color:var(--blue);text-decoration:none;padding:2px 0}
+  .toc-item:hover{text-decoration:underline}
+
+  .q-card{
+    background:#fff;border:1px solid var(--border);border-radius:12px;
+    margin-bottom:1.25rem;overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .2s;
+  }
+  .q-card:hover{box-shadow:var(--shadow-md)}
+  .q-card.revealed{border-color:#93c5fd}
+
+  .q-header{
+    padding:1rem 1.25rem .75rem;border-bottom:1px solid var(--gray-100);
+    display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  }
+  .q-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .q-num{font-size:12px;font-weight:600;color:var(--gray-400)}
+
+  .badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em}
+  .badge-mcq{background:var(--blue-light);color:var(--blue-dark)}
+  .badge-msq{background:#fef3c7;color:#78350f;border:1px solid #fcd34d}
+  .badge-basic{background:var(--green-light);color:var(--green)}
+  .badge-moderate{background:#fef3c7;color:var(--amber)}
+  .badge-advanced{background:var(--red-light);color:var(--red)}
+  .badge-topic{background:var(--gray-100);color:var(--gray-600);font-size:10px}
+
+  .q-body{padding:1.25rem}
+  .q-text{font-size:14.5px;font-weight:500;color:var(--text);line-height:1.65;margin-bottom:1rem}
+  .q-text code{font-family:'IBM Plex Mono',monospace;font-size:12px;background:var(--gray-100);padding:1px 6px;border-radius:4px;color:#b91c1c}
+
+  .msq-hint{font-size:11px;color:#d97706;font-weight:500;margin-bottom:8px}
+
+  .options{display:flex;flex-direction:column;gap:7px;margin-bottom:1rem}
+  .opt{
+    display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:8px;
+    border:1.5px solid var(--border);cursor:pointer;transition:all .15s;
+    font-size:13.5px;color:var(--text);line-height:1.5;
+  }
+  .opt:hover{border-color:#93c5fd;background:var(--blue-light)}
+  .opt.selected{border-color:var(--blue);background:var(--blue-light)}
+  .opt.correct{border-color:var(--green);background:var(--green-light)}
+  .opt.wrong{border-color:var(--red);background:var(--red-light)}
+  .opt-key{font-weight:600;font-size:13px;min-width:20px;color:var(--gray-400);flex-shrink:0;padding-top:1px}
+  .opt.selected .opt-key{color:var(--blue)}
+  .opt.correct .opt-key{color:var(--green)}
+  .opt.wrong .opt-key{color:var(--red)}
+
+  .q-actions{display:flex;gap:8px;align-items:center;margin-top:4px}
+  .btn{
+    font-size:13px;font-weight:500;padding:7px 18px;border-radius:8px;
+    border:1.5px solid var(--border);background:#fff;color:var(--text);
+    cursor:pointer;transition:all .15s;font-family:inherit;
+  }
+  .btn:hover{background:var(--gray-100)}
+  .btn:active{transform:scale(.98)}
+  .btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn-primary:hover{background:#1648c0}
+
+  .explanation{
+    margin-top:1rem;padding:1rem 1.25rem;
+    background:#f0f9ff;border-top:1px solid #bae6fd;display:none;
+  }
+  .explanation.show{display:block}
+  .exp-result{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .exp-result-icon{
+    width:24px;height:24px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:13px;font-weight:700;flex-shrink:0;
+  }
+  .correct-icon{background:var(--green-light);color:var(--green)}
+  .wrong-icon{background:var(--red-light);color:var(--red)}
+  .exp-result-text{font-size:13px;font-weight:600}
+  .correct-text{color:var(--green)}
+  .wrong-text{color:var(--red)}
+  .ans-label{
+    font-size:12px;color:var(--gray-600);background:var(--gray-100);
+    border:1px solid var(--border);border-radius:4px;padding:2px 10px;margin-left:4px;
+  }
+  .exp-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--blue);margin-bottom:6px}
+  .exp-body{font-size:13.5px;color:var(--gray-600);line-height:1.7}
+  .exp-body code{font-family:'IBM Plex Mono',monospace;font-size:12px;background:#e0f2fe;padding:1px 5px;border-radius:3px;color:#0369a1}
+
+  .section-divider{
+    display:flex;align-items:center;gap:12px;
+    margin:2rem 0 1.25rem;font-size:12px;font-weight:700;
+    text-transform:uppercase;letter-spacing:.08em;color:var(--gray-400);
+  }
+  .section-divider::after{content:'';flex:1;height:1px;background:var(--gray-200)}
+
+  .gantt-box{
+    background:#f8fafc;border:1px solid var(--gray-200);border-radius:8px;
+    padding:10px 14px;margin:10px 0;font-family:'IBM Plex Mono',monospace;font-size:12px;
+    color:var(--gray-800);white-space:pre;overflow-x:auto;line-height:1.8;
+  }
+
+  @media print{
+    .controls-wrap,.score-wrap{display:none}
+    .q-card{break-inside:avoid;box-shadow:none}
+    .explanation{display:block!important}
+    body{background:#fff}
+  }
+  @media(max-width:600px){
+    .main{padding:1rem}
+    .site-header{padding:1.5rem 1rem 1.25rem}
+    .site-header h1{font-size:21px}
+    .controls-wrap{padding:.75rem 1rem}
+    .score-wrap{padding:0 1rem}
+  }
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <div class="tag">Formative Assessment · GATE Standard</div>
+  <h1>Operating Systems — Unit 2: Process Management</h1>
+  <p>35 Questions &nbsp;·&nbsp; MCQ + MSQ &nbsp;·&nbsp; Basic → Moderate → Advanced</p>
+</div>
+
+<div class="stats-wrap">
+  <div class="stats-inner">
+    <div class="stat-item"><span class="stat-num">35</span>&nbsp;Questions</div>
+    <span class="stat-sep">·</span>
+    <div class="stat-item"><span class="stat-num">22</span>&nbsp;MCQ</div>
+    <span class="stat-sep">·</span>
+    <div class="stat-item"><span class="stat-num">13</span>&nbsp;MSQ</div>
+    <span class="stat-sep">·</span>
+    <div class="stat-item">Attempted: <strong id="s-attempted" style="margin-left:4px">0</strong></div>
+    <span class="stat-sep">·</span>
+    <div class="stat-item">Correct: <strong id="s-correct" style="margin-left:4px;color:var(--green)">0</strong></div>
+    <span class="stat-sep">·</span>
+    <div class="stat-item">Score: <strong id="s-score" style="margin-left:4px;color:var(--blue)">0%</strong></div>
+  </div>
+</div>
+
+<div class="controls-wrap">
+  <div class="controls-inner">
+    <span class="controls-label">Filter</span>
+    <span class="pill active" onclick="setFilter('all',this)">All (35)</span>
+    <span class="pill" onclick="setFilter('MCQ',this)">MCQ</span>
+    <span class="pill" onclick="setFilter('MSQ',this)">MSQ</span>
+    <span class="pill" onclick="setFilter('Basic',this)" style="border-color:#6ee7b7;color:var(--green)">Basic</span>
+    <span class="pill" onclick="setFilter('Moderate',this)" style="border-color:#fcd34d;color:var(--amber)">Moderate</span>
+    <span class="pill" onclick="setFilter('Advanced',this)" style="border-color:#fca5a5;color:var(--red)">Advanced</span>
+    <span style="flex:1"></span>
+    <button class="btn" onclick="revealAll()" style="font-size:12px;padding:5px 14px">Show All Answers</button>
+    <button class="btn" onclick="resetAll()" style="font-size:12px;padding:5px 14px">Reset All</button>
+  </div>
+</div>
+
+<div class="score-wrap">
+  <div class="score-bar-bg"><div class="score-bar-fill" id="score-bar"></div></div>
+  <div class="score-label" id="score-label">0 of 35 answered</div>
+</div>
+
+<div class="main">
+
+  <div class="toc-wrap">
+    <div class="toc-title">Topics covered in Unit 2</div>
+    <div class="toc-grid">
+      <a class="toc-item" href="#q1">Program vs Process</a>
+      <a class="toc-item" href="#q2">PCB fields</a>
+      <a class="toc-item" href="#q4">Process lifecycle &amp; states</a>
+      <a class="toc-item" href="#q5">fork() system call</a>
+      <a class="toc-item" href="#q8">exec() system call</a>
+      <a class="toc-item" href="#q9">wait() system call</a>
+      <a class="toc-item" href="#q10">fork-exec pattern</a>
+      <a class="toc-item" href="#q11">Scheduling — SJF &amp; starvation</a>
+      <a class="toc-item" href="#q12">Scheduling — FCFS numerical</a>
+      <a class="toc-item" href="#q13">Scheduling — SJF numerical</a>
+      <a class="toc-item" href="#q14">Scheduling — Round Robin numerical</a>
+      <a class="toc-item" href="#q15">Scheduling criteria</a>
+      <a class="toc-item" href="#q18">Context switching</a>
+      <a class="toc-item" href="#q19">Source to execution</a>
+      <a class="toc-item" href="#q20">OS execution modes</a>
+      <a class="toc-item" href="#q21">Process state transitions</a>
+      <a class="toc-item" href="#q23">Zombie &amp; orphan processes</a>
+      <a class="toc-item" href="#q25">Linux CFS scheduler</a>
+      <a class="toc-item" href="#q28">Starvation in scheduling</a>
+      <a class="toc-item" href="#q30">System call mechanism</a>
+      <a class="toc-item" href="#q34">MLFQ scheduling</a>
+    </div>
+  </div>
+
+  <div id="qlist"></div>
+</div>
+
+<script>
+const questions = [
+  {id:1,type:"MCQ",diff:"Basic",topic:"Program vs Process",
+   q:"Which of the following is the BEST distinction between a program and a process?",
+   opts:["A program is active; a process is passive","A process is a program in execution; a program is a passive set of instructions on disk","A program has a PCB; a process does not","A process can only exist in RAM; a program cannot"],
+   ans:[1],
+   exp:"A program is a static entity stored on disk — a file containing instructions. A process is a dynamic entity: a program loaded into memory and currently being executed by the CPU, with its own PCB, address space, and resources. Multiple processes can run the same program simultaneously."
+  },
+  {id:2,type:"MCQ",diff:"Basic",topic:"PCB",
+   q:"Which of the following information is NOT typically stored in a Process Control Block (PCB)?",
+   opts:["Program counter","List of open files","Source code of the program","CPU register contents"],
+   ans:[2],
+   exp:"A PCB stores runtime state: program counter, CPU registers, process state, memory management info (page tables), list of open files, scheduling priority, and PID. Source code is stored on disk as a file — it is NOT part of the PCB."
+  },
+  {id:3,type:"MSQ",diff:"Basic",topic:"PCB",
+   q:"Which of the following fields are stored in a Process Control Block (PCB)? (Select ALL that apply)",
+   opts:["Process ID (PID)","Program counter","Parent process source code","CPU scheduling priority","Memory limits / page table base address"],
+   ans:[0,1,3,4],
+   exp:"PCB fields include: PID (A), program counter (B), CPU registers, scheduling priority (D), memory management info such as page table pointer and memory limits (E), accounting info, and I/O status. Parent process source code (C) is never stored in the PCB."
+  },
+  {id:4,type:"MCQ",diff:"Basic",topic:"Process Lifecycle",
+   q:"Which of the following is the CORRECT order of process states?",
+   opts:["New → Running → Ready → Waiting → Terminated","New → Ready → Running → Waiting → Ready → Running → Terminated","New → Waiting → Ready → Running → Terminated","New → Running → Terminated"],
+   ans:[1],
+   exp:"The standard process lifecycle: New (being created) → Ready (in run queue, awaiting CPU) → Running (executing on CPU) → Waiting/Blocked (waiting for I/O or event) → back to Ready → eventually Terminated. A process can cycle between Ready, Running, and Waiting multiple times before terminating."
+  },
+  {id:5,type:"MCQ",diff:"Basic",topic:"System Calls — fork()",
+   q:"What does the <code>fork()</code> system call return in the PARENT process?",
+   opts:["0","The PID of the child process","-1 on success","The PID of the parent process"],
+   ans:[1],
+   exp:"fork() creates a child process. Return values: Parent receives the child's PID (a positive integer). Child receives 0. On failure, -1 is returned to the parent and no child is created. This asymmetric return value is how parent and child distinguish themselves after the fork."
+  },
+  {id:6,type:"MCQ",diff:"Basic",topic:"System Calls — fork()",
+   q:"After a successful <code>fork()</code>, the child process:",
+   opts:["Starts execution from the beginning of main()","Continues execution from the point after fork()","Executes a completely different program immediately","Runs in kernel mode only"],
+   ans:[1],
+   exp:"fork() creates an almost identical copy of the parent. Both parent and child continue execution from the statement immediately after fork(). They share the same code but have separate address spaces (copy-on-write). The child does NOT restart from main()."
+  },
+  {id:7,type:"MCQ",diff:"Moderate",topic:"System Calls — fork()",
+   q:"Consider: <code>fork(); fork(); fork();</code> — How many total processes exist after all three fork() calls (including the original)?",
+   opts:["3","4","6","8"],
+   ans:[3],
+   exp:"Each fork() doubles the number of processes. Start: 1. After 1st fork(): 2. After 2nd fork(): 4. After 3rd fork(): 8. Total = 2³ = 8 processes. This is a classic GATE question — n sequential fork() calls create 2ⁿ total processes (if no conditions).",
+   gantt:"Processes after each fork():\n After fork() #1 : P0, P1           (2 processes)\n After fork() #2 : P0, P1, P2, P3   (4 processes)\n After fork() #3 : P0..P7            (8 processes)"
+  },
+  {id:8,type:"MCQ",diff:"Moderate",topic:"System Calls — exec()",
+   q:"The <code>exec()</code> family of system calls:",
+   opts:["Creates a new process","Replaces the current process image with a new program","Duplicates the calling process","Returns the PID of the new program"],
+   ans:[1],
+   exp:"exec() (execve, execl, execvp etc.) replaces the calling process's memory image — code, data, stack, heap — with a new program. The PID remains the same. exec() does NOT create a new process. If exec() succeeds, it never returns because the old code no longer exists."
+  },
+  {id:9,type:"MCQ",diff:"Moderate",topic:"System Calls — wait()",
+   q:"Which system call makes a parent process wait until one of its child processes terminates?",
+   opts:["sleep()","pause()","wait()","join()"],
+   ans:[2],
+   exp:"wait() (and waitpid()) suspends the calling parent process until a child terminates. It also reaps the child's exit status, preventing zombie processes. If the parent never calls wait(), terminated children become zombies — they retain their PCB entry in the process table."
+  },
+  {id:10,type:"MSQ",diff:"Moderate",topic:"System Calls — fork-exec pattern",
+   q:"Which of the following correctly describe the <code>fork()</code>-<code>exec()</code> pattern? (Select ALL that apply)",
+   opts:["fork() creates a copy of the parent process","exec() is called in the child to replace its image with a new program","fork() and exec() together allow creating a new process running a different program","exec() creates a new process with a new PID","The parent typically calls wait() to reap the child"],
+   ans:[0,1,2,4],
+   exp:"The fork-exec pattern: (A) fork() duplicates the parent. (B) Child calls exec() to load a new program. (C) Together, they implement 'create new process running different program' — the Unix way of spawning processes. (E) Parent calls wait() to avoid zombie children. exec() does NOT create a new process or change PID — option D is false."
+  },
+  {id:11,type:"MCQ",diff:"Basic",topic:"Scheduling — Starvation",
+   q:"Which scheduling algorithm may cause starvation of long processes?",
+   opts:["FCFS","Round Robin","SJF (Shortest Job First)","Multilevel Queue"],
+   ans:[2],
+   exp:"SJF always picks the shortest job next. If short jobs keep arriving continuously, long jobs may never get the CPU — this is starvation. FCFS does not starve (non-preemptive, ordered by arrival). Round Robin gives each process a fair time quantum ensuring all processes eventually run."
+  },
+  {id:12,type:"MCQ",diff:"Moderate",topic:"Scheduling — FCFS Numerical",
+   q:"Processes P1(burst=24ms), P2(burst=3ms), P3(burst=3ms) all arrive at time 0. Using FCFS, the average waiting time is:",
+   opts:["0 ms","10 ms","17 ms","27 ms"],
+   ans:[2],
+   exp:"FCFS serves in arrival order: P1 → P2 → P3.\nWaiting times: P1 = 0ms, P2 = 24ms, P3 = 24+3 = 27ms.\nAverage waiting time = (0 + 24 + 27) / 3 = 51 / 3 = 17ms.\n\nGantt chart: |P1(0-24)|P2(24-27)|P3(27-30)|\n\nNote: The convoy effect — P2 and P3 wait a long time behind the large P1.",
+   gantt:"Gantt Chart (FCFS):\n|  P1  (0-24)  |  P2 (24-27)  |  P3 (27-30)  |\n 0            24             27             30\n\nWaiting: P1=0, P2=24, P3=27  →  Avg = 17 ms"
+  },
+  {id:13,type:"MCQ",diff:"Moderate",topic:"Scheduling — SJF Numerical",
+   q:"Non-Preemptive SJF: P1(7ms,arrives 0), P2(4ms,arrives 2), P3(1ms,arrives 4), P4(4ms,arrives 5). Average waiting time is:",
+   opts:["4 ms","4.5 ms","7 ms","7.75 ms"],
+   ans:[0],
+   exp:"At t=0: only P1 available → runs 0–7.\nAt t=7: P2(4), P3(1), P4(4) all available. SJF picks shortest → P3(1ms) runs 7–8.\nAt t=8: P2(4) and P4(4) tie — pick P2 → runs 8–12. P4 → runs 12–16.\n\nWaiting times: P1=0, P2=(8–2)=6, P3=(7–4)=3, P4=(12–5)=7.\nAverage = (0+6+3+7)/4 = 16/4 = 4ms.",
+   gantt:"Gantt Chart (Non-Preemptive SJF):\n|P1(0-7)|P3(7-8)|P2(8-12)|P4(12-16)|\n 0      7       8        12        16\n\nWaiting: P1=0, P2=6, P3=3, P4=7  →  Avg = 4 ms"
+  },
+  {id:14,type:"MCQ",diff:"Advanced",topic:"Scheduling — Round Robin Numerical",
+   q:"Round Robin (quantum=4ms): P1(8ms), P2(4ms), P3(9ms), P4(5ms) all arrive at t=0. Average turnaround time is:",
+   opts:["19.75 ms","17.5 ms","21 ms","14 ms"],
+   ans:[0],
+   exp:"Gantt: P1(0-4), P2(4-8), P3(8-12), P4(12-16), P1(16-20), P3(20-24), P4(24-25), P3(25-26).\n\nCompletion times: P1=20, P2=8, P3=26, P4=25.\nTurnaround (all arrive at 0): P1=20, P2=8, P3=26, P4=25.\nAverage = (20+8+26+25)/4 = 79/4 = 19.75ms.",
+   gantt:"Gantt Chart (RR, quantum=4):\n|P1|P2|P3|P4|P1|P3|P4|P3|\n 0  4  8 12 16 20 24 25 26\n\nCompletion: P1=20, P2=8, P3=26, P4=25\nAvg Turnaround = (20+8+26+25)/4 = 19.75 ms"
+  },
+  {id:15,type:"MSQ",diff:"Moderate",topic:"Scheduling Criteria",
+   q:"Which of the following are valid CPU scheduling criteria that an OS should optimize? (Select ALL that apply)",
+   opts:["CPU utilization (maximize)","Throughput (maximize)","Turnaround time (minimize)","Waiting time (minimize)","Context switch frequency (maximize)"],
+   ans:[0,1,2,3],
+   exp:"Standard scheduling criteria: (A) CPU utilization — keep CPU busy, maximize. (B) Throughput — processes completed per unit time, maximize. (C) Turnaround time — total time from submission to completion, minimize. (D) Waiting time — time spent in ready queue, minimize. Maximizing context switches (E) is WRONG — context switches are pure overhead and should be minimized."
+  },
+  {id:16,type:"MCQ",diff:"Basic",topic:"Scheduling — Preemptive vs Non-Preemptive",
+   q:"Which of the following scheduling algorithms is preemptive?",
+   opts:["FCFS","Non-preemptive SJF","Round Robin","Non-preemptive Priority"],
+   ans:[2],
+   exp:"Round Robin is inherently preemptive — each process gets a fixed time quantum, then is forcibly removed from the CPU and placed at the back of the ready queue. FCFS and Non-preemptive SJF/Priority do not preempt a running process; they wait until it finishes or voluntarily blocks."
+  },
+  {id:17,type:"MCQ",diff:"Advanced",topic:"Scheduling — Preemptive Priority",
+   q:"In preemptive priority scheduling, if a higher-priority process arrives while a lower-priority process is running, the OS:",
+   opts:["Waits for the current process to finish","Saves the current process's context and switches to the higher-priority process","Terminates the current process","Queues the new process at the back of the ready queue"],
+   ans:[1],
+   exp:"In preemptive priority scheduling, the arriving high-priority process immediately preempts the running lower-priority process. The OS saves the current process's context (all registers, PC) in its PCB and performs a context switch. The high-priority process gets the CPU. The preempted process remains in the ready queue."
+  },
+  {id:18,type:"MCQ",diff:"Moderate",topic:"Context Switch",
+   q:"Context switching is considered overhead because:",
+   opts:["It increases CPU utilization","No useful work is done while saving/restoring process state","It requires terminating the current process","It only occurs during I/O operations"],
+   ans:[1],
+   exp:"During a context switch, the CPU saves the outgoing process's PCB (registers, PC, memory maps) and loads the incoming process's PCB. During this interval, no user process instructions are executed — the CPU does pure OS bookkeeping. This makes context switching overhead. Minimizing context switch time is a key OS design goal."
+  },
+  {id:19,type:"MCQ",diff:"Moderate",topic:"Process Lifecycle — Source to Execution",
+   q:"Which is the correct sequence from source code to a running process?",
+   opts:["Source → Linker → Compiler → Loader → Process","Source → Compiler → Linker → Loader → Process","Source → Loader → Compiler → Linker → Process","Source → Compiler → Loader → Linker → Process"],
+   ans:[1],
+   exp:"Correct pipeline:\n(1) Compiler — translates source (.c/.cpp) to object code (.o file, machine code).\n(2) Linker — combines object files + libraries into a complete executable binary.\n(3) Loader — loads the executable into memory, sets up the virtual address space, resolves dynamic libraries, and transfers control to the entry point.\nNow the process runs."
+  },
+  {id:20,type:"MCQ",diff:"Moderate",topic:"OS Execution Modes",
+   q:"A process executes <code>read(fd, buf, n)</code>. Which sequence of mode transitions occurs?",
+   opts:["User mode → User mode (stays in user mode)","User mode → Kernel mode → User mode","Kernel mode → User mode → Kernel mode","User mode → Kernel mode (never returns)"],
+   ans:[1],
+   exp:"read() is a system call. The mode transition sequence: (1) Process executes a trap/syscall instruction → CPU switches to kernel mode. (2) OS kernel executes the I/O operation. (3) OS places result in user buffer and returns → CPU switches back to user mode. (4) User process resumes. Every system call causes a user→kernel→user mode transition."
+  },
+  {id:21,type:"MSQ",diff:"Advanced",topic:"Process State Transitions",
+   q:"Which of the following transitions in the process state diagram are VALID? (Select ALL that apply)",
+   opts:["Running → Ready (preemption or time quantum expiry)","Ready → Waiting (waiting for I/O)","Running → Waiting (blocking on I/O or event)","New → Running (direct execution without scheduling)","Waiting → Running (direct dispatch after I/O)"],
+   ans:[0,2],
+   exp:"Valid transitions: (A) Running→Ready: preemption by scheduler or time quantum expiry — correct. (C) Running→Waiting: process issues a blocking system call (I/O, semaphore wait) — correct. Invalid: (B) Ready→Waiting is impossible — a process must be on the CPU (Running) to make a blocking system call. (D) New→Running skips the Ready queue and scheduling. (E) Waiting→Running skips the Ready queue — must go Waiting→Ready first, then Ready→Running via the scheduler."
+  },
+  {id:22,type:"MCQ",diff:"Advanced",topic:"System Calls — getpid/getppid",
+   q:"In the code below, what does the CHILD process print?<br><code>pid_t p = fork();<br>if(p == 0) printf(\"%d %d\", getpid(), getppid());</code>",
+   opts:["Child's PID and parent's PID","0 and parent's PID","Child's PID and 0","Parent's PID and child's PID"],
+   ans:[0],
+   exp:"getpid() returns the calling process's own PID. getppid() returns the parent's PID. In the child process (where fork() returned 0), getpid() gives the child's actual PID (a positive integer assigned by the OS at creation), and getppid() gives the parent's PID. Output: child_PID  parent_PID."
+  },
+  {id:23,type:"MCQ",diff:"Advanced",topic:"Zombie Process",
+   q:"A zombie process is one that has:",
+   opts:["Been killed by the OS due to a memory violation","Terminated but whose parent has not yet called wait()","Been stuck waiting for I/O indefinitely","Lost its PCB due to a kernel bug"],
+   ans:[1],
+   exp:"A zombie process has finished execution (exit() called) but its PCB still exists because the parent hasn't called wait() to collect its exit status. The process is 'dead' but its entry remains in the process table. If the parent never calls wait(), the zombie persists until the parent terminates (at which point init/systemd adopts and reaps it)."
+  },
+  {id:24,type:"MCQ",diff:"Advanced",topic:"Orphan Process",
+   q:"If a parent process terminates before its child, the child becomes an orphan. In Linux, orphan processes are adopted by:",
+   opts:["The kernel directly","The init process (PID 1) or systemd","The shell that started the parent","They are immediately terminated"],
+   ans:[1],
+   exp:"In Linux, when a parent dies before its child, the child is 'orphaned'. The init process (PID 1, or systemd in modern Linux) automatically adopts all orphaned processes. init periodically calls wait() to reap adopted zombie children. This mechanism prevents orphans from accumulating as permanent zombie processes."
+  },
+  {id:25,type:"MSQ",diff:"Advanced",topic:"Linux CFS Scheduler",
+   q:"Which of the following are TRUE about the Linux Completely Fair Scheduler (CFS)? (Select ALL that apply)",
+   opts:["It uses a red-black tree to maintain the run queue","It tracks virtual runtime (vruntime) per process","It assigns fixed time quanta like Round Robin","It always picks the process with the smallest vruntime to run next","It supports different scheduling classes (SCHED_NORMAL, SCHED_FIFO, SCHED_RR)"],
+   ans:[0,1,3,4],
+   exp:"Linux CFS: (A) Uses a red-black tree (O(log n) insert/delete/find) — the leftmost node is always the next process to run. (B) Tracks vruntime — virtual time each process has run, weighted by nice value (priority). (D) Always schedules the process with the smallest vruntime, ensuring fairness. (E) CFS is one scheduling class (SCHED_NORMAL/SCHED_BATCH); Linux also has SCHED_FIFO and SCHED_RR for real-time. CFS does NOT use fixed quanta (C) — it calculates dynamic slices from target_latency / num_runnable_tasks."
+  },
+  {id:26,type:"MCQ",diff:"Moderate",topic:"Scheduling — Convoy Effect",
+   q:"FCFS scheduling suffers from the 'Convoy Effect'. What does this mean?",
+   opts:["Short processes get more CPU time than long ones","A long CPU-bound process holds the CPU while many short processes wait behind it","The CPU is always idle when I/O processes run","Processes form a convoy that circles through ready and waiting states"],
+   ans:[1],
+   exp:"The Convoy Effect in FCFS: a long CPU-bound process monopolizes the CPU while many short processes queue behind it, causing high average waiting time. Classic example: P1(24ms), P2(3ms), P3(3ms) — avg wait = 17ms. If run in SJF order (P2,P3,P1) — avg wait = (0+3+6)/3 = 3ms. SJF eliminates the convoy effect."
+  },
+  {id:27,type:"MCQ",diff:"Moderate",topic:"Scheduling — SRTF",
+   q:"Preemptive SJF is also known as:",
+   opts:["Shortest Remaining Time First (SRTF)","Longest Job First (LJF)","Multi-Level Feedback Queue (MLFQ)","Rate Monotonic Scheduling (RMS)"],
+   ans:[0],
+   exp:"Preemptive SJF = SRTF (Shortest Remaining Time First). When a new process arrives, if its burst time is less than the REMAINING burst of the currently running process, preemption occurs. SRTF gives optimal average waiting time among all scheduling algorithms for a given set of processes, but requires knowing burst times in advance."
+  },
+  {id:28,type:"MSQ",diff:"Moderate",topic:"Scheduling — Starvation",
+   q:"Which scheduling algorithms can potentially cause starvation? (Select ALL that apply)",
+   opts:["Priority Scheduling (non-preemptive)","FCFS","SJF (both preemptive and non-preemptive)","Round Robin","Multilevel Queue Scheduling"],
+   ans:[0,2,4],
+   exp:"Starvation can occur in: (A) Priority Scheduling — low-priority processes may never run if high-priority processes keep arriving. (C) SJF/SRTF — long processes starve if short ones keep arriving. (E) Multilevel Queue — lower queues starve if higher queues always have processes. FCFS (B) and Round Robin (D) do NOT cause starvation — every process eventually gets the CPU in both algorithms."
+  },
+  {id:29,type:"MCQ",diff:"Advanced",topic:"Scheduling — Round Robin Limit",
+   q:"In Round Robin scheduling, if the time quantum is increased to infinity, the scheduling behavior approaches:",
+   opts:["SJF","Preemptive Priority","FCFS","SRTF"],
+   ans:[2],
+   exp:"If the time quantum → ∞, each process runs to completion before the next one starts (no preemption ever occurs). This is exactly FCFS behavior — processes run in arrival order to completion. Conversely, if the quantum → 0, it approaches ideal processor sharing (each process gets an infinitesimally small, equal slice). This limiting-case reasoning is a common GATE insight."
+  },
+  {id:30,type:"MCQ",diff:"Advanced",topic:"System Call Mechanism",
+   q:"System calls are implemented using a software interrupt (trap) rather than a regular function call because:",
+   opts:["Function calls are too slow for OS services","A trap switches the CPU to kernel mode, providing privileged access that regular function calls cannot","Traps are faster than function calls","Regular function calls cannot pass arguments to the OS"],
+   ans:[1],
+   exp:"System calls need kernel-mode privileges to access hardware and kernel data structures. A regular user-space function call stays in user mode and cannot access privileged resources. A trap instruction (INT 0x80 on x86, SYSCALL on x86-64) triggers a CPU mode switch to kernel mode, where the OS handler executes with full privileges. Privilege elevation is the fundamental reason traps are used."
+  },
+  {id:31,type:"MCQ",diff:"Basic",topic:"Scheduling Types",
+   q:"Long-term scheduling (job scheduling) controls:",
+   opts:["Which process gets the CPU next","Which processes are admitted from disk into main memory (degree of multiprogramming)","How much memory each process gets","Which I/O device a process uses"],
+   ans:[1],
+   exp:"Long-term (job) scheduler controls the degree of multiprogramming — which processes are admitted from disk into the ready queue in main memory. Short-term (CPU) scheduler picks which ready process gets the CPU next. Medium-term scheduler handles swapping. Long-term runs infrequently (seconds to minutes); short-term runs very frequently (milliseconds — every context switch)."
+  },
+  {id:32,type:"MSQ",diff:"Advanced",topic:"System Call Handling",
+   q:"Which of the following are TRUE about how system calls are handled by the OS? (Select ALL that apply)",
+   opts:["The process passes the system call number in a register","The CPU privilege level changes from user mode to kernel mode","The kernel executes using the user process's stack","A dispatch table maps system call numbers to handler functions","After the system call completes, the CPU returns to user mode"],
+   ans:[0,1,3,4],
+   exp:"System call handling: (A) System call number (e.g., read=0, write=1 on Linux x86-64) is placed in a register (rax on x86-64). (B) CPU switches to kernel mode via the trap instruction. (D) A system call dispatch/jump table maps numbers to the correct kernel handler function. (E) On return, the CPU reverts to user mode and the process resumes. The kernel uses its OWN dedicated kernel stack (C is false) — not the user process's stack, which cannot be trusted."
+  },
+  {id:33,type:"MCQ",diff:"Moderate",topic:"Context Switch",
+   q:"Which of the following does NOT need to be saved/restored during a context switch?",
+   opts:["Program counter","CPU registers","Page table base register (CR3 on x86)","The OS kernel code"],
+   ans:[3],
+   exp:"During context switch, the OS saves per-process state: program counter (A), all CPU registers (B), page table base register / PTBR (C), stack pointer, FPU state, etc. The OS kernel code (D) is SHARED among all processes — it is mapped into every process's virtual address space (kernel space region) and does not need to be saved or restored per context switch."
+  },
+  {id:34,type:"MCQ",diff:"Advanced",topic:"Scheduling — MLFQ",
+   q:"The Multi-Level Feedback Queue (MLFQ) scheduler is considered adaptive because:",
+   opts:["It uses a fixed priority for each process forever","It adjusts a process's priority based on its observed CPU behavior — demoting CPU-bound and promoting I/O-bound processes","It runs each process for an equal time quantum","It is only used for real-time systems"],
+   ans:[1],
+   exp:"MLFQ is adaptive: processes start at the highest-priority queue. If they consume their full time quantum (CPU-bound behavior), they are demoted to a lower-priority queue with longer quanta. If they voluntarily give up the CPU early (I/O-bound behavior), they stay at high priority. This naturally approximates SJF behavior without needing advance knowledge of burst times."
+  },
+  {id:35,type:"MSQ",diff:"Advanced",topic:"Process State Transitions",
+   q:"Which of the following events cause a process to move from the RUNNING state to the READY state? (Select ALL that apply)",
+   opts:["Time quantum expiry in Round Robin","Process issues a read() system call and blocks on I/O","A higher-priority process arrives (preemptive priority scheduling)","Process calls exit()","Timer interrupt triggers a preemptive context switch mid-burst"],
+   ans:[0,2,4],
+   exp:"Running→Ready transitions: (A) Time quantum expiry — scheduler preempts the process and moves it to the back of the ready queue. (C) Higher-priority process arrival — preemptive priority scheduling preempts the current process to the ready queue. (E) Timer interrupt — hardware timer fires, OS preempts the process. NOT Running→Ready: (B) read() blocking causes Running→Waiting (not Ready). (D) exit() causes Running→Terminated."
+  }
+];
+
+let state = {};
+questions.forEach(q => { state[q.id] = { selected: [], revealed: false }; });
+let activeFilter = 'all';
+
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.pill').forEach(p => {
+    p.classList.remove('active','active-green','active-amber','active-red');
+  });
+  if(f==='Basic') el.classList.add('active-green');
+  else if(f==='Moderate') el.classList.add('active-amber');
+  else if(f==='Advanced') el.classList.add('active-red');
+  else el.classList.add('active');
+  renderAll();
+}
+
+function updateStats() {
+  let att=0, cor=0;
+  questions.forEach(q => {
+    const s = state[q.id];
+    if(s.revealed) {
+      att++;
+      if([...s.selected].sort().join(',') === [...q.ans].sort().join(',')) cor++;
+    }
+  });
+  document.getElementById('s-attempted').textContent = att;
+  document.getElementById('s-correct').textContent = cor;
+  document.getElementById('s-score').textContent = att>0 ? Math.round(cor/att*100)+'%' : '0%';
+  const pct = Math.round(att/questions.length*100);
+  document.getElementById('score-bar').style.width = pct+'%';
+  document.getElementById('score-label').textContent = att+' of '+questions.length+' answered';
+}
+
+function toggleOpt(qid, idx) {
+  const q = questions.find(x=>x.id===qid);
+  const s = state[qid];
+  if(s.revealed) return;
+  if(q.type==='MCQ') { s.selected = [idx]; }
+  else {
+    if(s.selected.includes(idx)) s.selected = s.selected.filter(x=>x!==idx);
+    else s.selected.push(idx);
+  }
+  refreshCard(q);
+}
+
+function checkAnswer(qid) {
+  const s = state[qid];
+  if(s.selected.length===0) return;
+  s.revealed = true;
+  refreshCard(questions.find(x=>x.id===qid));
+  updateStats();
+}
+
+function resetCard(qid) {
+  state[qid] = { selected:[], revealed:false };
+  refreshCard(questions.find(x=>x.id===qid));
+  updateStats();
+}
+
+function revealAll() {
+  questions.forEach(q => {
+    if(!state[q.id].revealed) {
+      state[q.id].selected = [...q.ans];
+      state[q.id].revealed = true;
+    }
+  });
+  renderAll(); updateStats();
+}
+
+function resetAll() {
+  questions.forEach(q => { state[q.id] = {selected:[],revealed:false}; });
+  renderAll(); updateStats();
+}
+
+function buildCard(q) {
+  const s = state[q.id];
+  const L = ['A','B','C','D','E'];
+  const ansList = q.ans.map(i=>L[i]).join(', ');
+  const correct = [...s.selected].sort().join(',') === [...q.ans].sort().join(',');
+
+  const optsHtml = q.opts.map((opt,i) => {
+    let cls = 'opt';
+    if(s.revealed) {
+      if(q.ans.includes(i)) cls += ' correct';
+      else if(s.selected.includes(i)) cls += ' wrong';
+    } else {
+      if(s.selected.includes(i)) cls += ' selected';
+    }
+    return `<div class="${cls}" onclick="toggleOpt(${q.id},${i})"><span class="opt-key">${L[i]}.</span><span>${opt}</span></div>`;
+  }).join('');
+
+  const msqHint = q.type==='MSQ' ? `<div class="msq-hint">&#9888; Select all correct options</div>` : '';
+
+  let actions = '';
+  if(!s.revealed) {
+    actions = `<button class="btn btn-primary" onclick="checkAnswer(${q.id})">Check Answer</button>`;
+    if(s.selected.length>0) actions += `<button class="btn" onclick="resetCard(${q.id})" style="margin-left:4px">Reset</button>`;
+  } else {
+    actions = `<button class="btn" onclick="resetCard(${q.id})">Try Again</button>`;
+  }
+
+  let ganttHtml = '';
+  if(q.gantt && s.revealed) {
+    ganttHtml = `<div class="gantt-box">${q.gantt}</div>`;
+  }
+
+  let expHtml = '';
+  if(s.revealed) {
+    const icon = correct
+      ? `<div class="exp-result-icon correct-icon">&#10003;</div>`
+      : `<div class="exp-result-icon wrong-icon">&#10007;</div>`;
+    const txt = correct
+      ? `<span class="exp-result-text correct-text">Correct!</span>`
+      : `<span class="exp-result-text wrong-text">Incorrect</span>`;
+    expHtml = `<div class="explanation show">
+      <div class="exp-result">${icon}${txt}<span class="ans-label">Answer: ${ansList}</span></div>
+      ${ganttHtml}
+      <div class="exp-title">Explanation</div>
+      <div class="exp-body">${q.exp.replace(/\n/g,'<br>')}</div>
+    </div>`;
+  }
+
+  return `
+    <div class="q-header">
+      <div class="q-meta">
+        <span class="q-num">Q${q.id}</span>
+        <span class="badge badge-${q.type.toLowerCase()}">${q.type}</span>
+        <span class="badge badge-${q.diff.toLowerCase()}">${q.diff}</span>
+        <span class="badge badge-topic">${q.topic}</span>
+      </div>
+    </div>
+    <div class="q-body">
+      <div class="q-text">${q.q}</div>
+      ${msqHint}
+      <div class="options">${optsHtml}</div>
+      <div class="q-actions">${actions}</div>
+    </div>
+    ${expHtml}
+  `;
+}
+
+function refreshCard(q) {
+  const el = document.getElementById('card-'+q.id);
+  if(!el) return;
+  el.innerHTML = buildCard(q);
+  el.className = 'q-card' + (state[q.id].revealed ? ' revealed' : '');
+}
+
+function renderAll() {
+  const filtered = questions.filter(q => {
+    if(activeFilter==='all') return true;
+    if(activeFilter==='MCQ'||activeFilter==='MSQ') return q.type===activeFilter;
+    return q.diff===activeFilter;
+  });
+
+  const container = document.getElementById('qlist');
+  container.innerHTML = '';
+
+  const groups = {Basic:[],Moderate:[],Advanced:[]};
+  filtered.forEach(q => groups[q.diff].push(q));
+
+  ['Basic','Moderate','Advanced'].forEach(diff => {
+    if(!groups[diff].length) return;
+    if(activeFilter==='all') {
+      const divider = document.createElement('div');
+      divider.className = 'section-divider';
+      const colors = {Basic:'var(--green)',Moderate:'var(--amber)',Advanced:'var(--red)'};
+      divider.innerHTML = `<span style="color:${colors[diff]}">${diff}</span>`;
+      container.appendChild(divider);
+    }
+    groups[diff].forEach(q => {
+      const el = document.createElement('div');
+      el.className = 'q-card' + (state[q.id].revealed ? ' revealed' : '');
+      el.id = 'card-'+q.id;
+      el.innerHTML = buildCard(q);
+      container.appendChild(el);
+    });
+  });
+}
+
+renderAll();
+updateStats();
+</script>
+</body>
+</html>

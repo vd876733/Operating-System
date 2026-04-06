@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GATE OS | Unit 3: Process Synchronization</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d47;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --mcq-tag: #0ea5e9;
+    --msq-tag: #8b5cf6;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0f1e38 50%, #0a0e1a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 24px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,212,255,0.12), transparent);
+    pointer-events: none;
+  }
+  .hero-tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(0,212,255,0.3);
+    padding: 4px 14px;
+    border-radius: 2px;
+    margin-bottom: 18px;
+  }
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 5vw, 52px);
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    color: #fff;
+  }
+  .hero h1 span { color: var(--accent); }
+  .hero-sub {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 14px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── STATS BAR ── */
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    flex-wrap: wrap;
+    padding: 20px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat { text-align: center; }
+  .stat-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .stat-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+
+  /* ── CONTROLS ── */
+  .controls {
+    max-width: 960px;
+    margin: 28px auto 0;
+    padding: 0 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .filter-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 7px 18px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .filter-btn:hover, .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.06); }
+  .score-display {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--accent3);
+    padding: 7px 18px;
+    border: 1px solid rgba(16,185,129,0.3);
+    border-radius: 3px;
+    background: rgba(16,185,129,0.06);
+  }
+
+  /* ── MAIN ── */
+  main { max-width: 960px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  /* ── SECTION DIVIDER ── */
+  .topic-divider {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 36px 0 20px;
+  }
+  .topic-divider span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent2);
+    white-space: nowrap;
+  }
+  .topic-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ── QUESTION CARD ── */
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: border-color .2s, transform .15s;
+  }
+  .q-card:hover { border-color: #2a3a55; transform: translateY(-1px); }
+
+  .q-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px 20px 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .q-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    padding-top: 2px;
+    min-width: 26px;
+  }
+  .q-meta { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .q-tags { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 2px 9px;
+    border-radius: 2px;
+    font-weight: 700;
+  }
+  .tag-mcq { background: rgba(14,165,233,0.15); color: var(--mcq-tag); border: 1px solid rgba(14,165,233,0.25); }
+  .tag-msq { background: rgba(139,92,246,0.15); color: var(--msq-tag); border: 1px solid rgba(139,92,246,0.25); }
+  .tag-basic { background: rgba(16,185,129,0.1); color: var(--accent3); border: 1px solid rgba(16,185,129,0.2); }
+  .tag-moderate { background: rgba(245,158,11,0.1); color: var(--warn); border: 1px solid rgba(245,158,11,0.2); }
+  .tag-advanced { background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+
+  .q-text { font-size: 14.5px; line-height: 1.6; color: var(--text); }
+  .q-text code {
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.15);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+    color: var(--accent);
+  }
+
+  .q-chevron {
+    color: var(--muted);
+    font-size: 18px;
+    transition: transform .25s;
+    padding-top: 2px;
+    flex-shrink: 0;
+  }
+  .q-card.open .q-chevron { transform: rotate(180deg); }
+
+  /* Options */
+  .q-options {
+    padding: 0 20px 0 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface2);
+    cursor: pointer;
+    transition: all .15s;
+    position: relative;
+  }
+  .option:hover { border-color: #2e4060; }
+  .option.selected { border-color: var(--accent2); background: rgba(124,58,237,0.08); }
+  .option.correct { border-color: var(--accent3) !important; background: rgba(16,185,129,0.08) !important; }
+  .option.wrong { border-color: var(--danger) !important; background: rgba(239,68,68,0.08) !important; }
+
+  .opt-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 700;
+    min-width: 18px;
+    padding-top: 1px;
+  }
+  .opt-text { font-size: 14px; line-height: 1.5; }
+
+  /* Answer zone */
+  .q-answer-zone { padding: 14px 20px 0 60px; }
+  .submit-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 8px 22px;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    color: var(--accent);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all .2s;
+    letter-spacing: 1px;
+  }
+  .submit-btn:hover { background: rgba(0,212,255,0.18); }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Explanation */
+  .explanation {
+    margin: 14px 20px 18px 60px;
+    padding: 14px 16px;
+    background: rgba(0,212,255,0.04);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    display: none;
+  }
+  .explanation.show { display: block; }
+  .exp-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .exp-text { font-size: 13.5px; line-height: 1.65; color: #a0b4c8; }
+  .exp-text code {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    background: rgba(0,212,255,0.08);
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-size: 12.5px;
+  }
+  .ans-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent3);
+    margin-bottom: 8px;
+  }
+
+  /* Progress */
+  .progress-bar-wrap {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 3px; background: var(--surface); z-index: 100;
+  }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, var(--accent2), var(--accent)); width: 0%; transition: width .3s; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 600px) {
+    .q-options, .q-answer-zone, .explanation { padding-left: 20px; }
+    .stats { gap: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-tag">GATE · Operating Systems</div>
+  <h1>Unit 3 — <span>Process Synchronization</span></h1>
+  <p class="hero-sub">Critical Sections · Semaphores · Deadlock · Dining Philosophers · Linux/Windows Case Studies</p>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-val">30</div><div class="stat-lbl">Questions</div></div>
+  <div class="stat"><div class="stat-val" id="mcq-count">20</div><div class="stat-lbl">MCQ</div></div>
+  <div class="stat"><div class="stat-val" id="msq-count">10</div><div class="stat-lbl">MSQ</div></div>
+  <div class="stat"><div class="stat-val" id="attempted-count">0</div><div class="stat-lbl">Attempted</div></div>
+  <div class="stat"><div class="stat-val" id="correct-count">0</div><div class="stat-lbl">Correct</div></div>
+</div>
+
+<div class="controls">
+  <button class="filter-btn active" onclick="filterQ('all',this)">All</button>
+  <button class="filter-btn" onclick="filterQ('MCQ',this)">MCQ only</button>
+  <button class="filter-btn" onclick="filterQ('MSQ',this)">MSQ only</button>
+  <button class="filter-btn" onclick="filterQ('basic',this)">Basic</button>
+  <button class="filter-btn" onclick="filterQ('moderate',this)">Moderate</button>
+  <button class="filter-btn" onclick="filterQ('advanced',this)">Advanced</button>
+  <div class="score-display" id="score-display">Score: 0 / 0</div>
+</div>
+
+<main id="main-container"></main>
+
+<div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+
+<script>
+const questions = [
+  // ── CONCURRENCY PRINCIPLES ──
+  {
+    id:1, type:"MCQ", difficulty:"basic", topic:"Concurrency Principles",
+    q:"Which of the following best describes a race condition?",
+    opts:["Two processes running in parallel on separate CPUs","A situation where the outcome depends on the relative order of execution of concurrent processes","A process waiting indefinitely for a resource","A deadlock involving exactly two processes"],
+    ans:[1],
+    exp:"A race condition occurs when the correctness of a program depends on the relative timing or interleaving of multiple threads/processes. The final outcome is non-deterministic and can vary between runs."
+  },
+  {
+    id:2, type:"MCQ", difficulty:"moderate", topic:"Concurrency Principles",
+    q:"Consider two threads T1 and T2 sharing a variable <code>x = 0</code>. T1 executes <code>x++</code> and T2 executes <code>x++</code> concurrently. Which of the following final values of x are possible (assuming <code>x++</code> is NOT atomic)?",
+    opts:["Only 2","Only 1","Both 1 and 2","0, 1, or 2"],
+    ans:[2],
+    exp:"Since x++ is read-modify-write (3 steps), T1 and T2 can both read x=0, both compute x+1=1, and both write 1, giving x=1. Or they execute sequentially giving x=2. So both 1 and 2 are possible. x=0 is not possible since at least one increment completes."
+  },
+  {
+    id:3, type:"MSQ", difficulty:"moderate", topic:"Critical Section Problem",
+    q:"Which of the following are the THREE necessary requirements for a correct solution to the Critical Section Problem?",
+    opts:["Mutual Exclusion","Progress","Bounded Waiting","Starvation Freedom (same as bounded waiting)"],
+    ans:[0,1,2],
+    exp:"The three classic requirements by Dijkstra are: (1) Mutual Exclusion — only one process in CS at a time, (2) Progress — if no process is in CS, a decision on who enters must be made in finite time, (3) Bounded Waiting — a bound must exist on the number of times others enter CS after a process requests entry. Starvation freedom is related but not listed as a separate requirement."
+  },
+  // ── SOFTWARE LIMITATIONS ──
+  {
+    id:4, type:"MCQ", difficulty:"moderate", topic:"Software Solutions",
+    q:"Peterson's solution for mutual exclusion between two processes uses:",
+    opts:["Only a shared flag array","Only a shared turn variable","Both a flag array and a turn variable","Semaphores"],
+    ans:[2],
+    exp:"Peterson's solution uses: (1) boolean flag[2] — to indicate a process's desire to enter CS, and (2) int turn — to indicate whose turn it is. Using only one of them is insufficient to satisfy all three CS requirements."
+  },
+  {
+    id:5, type:"MCQ", difficulty:"advanced", topic:"Software Solutions",
+    q:"Peterson's algorithm satisfies all three critical section requirements on modern hardware. This statement is:",
+    opts:["True, because the algorithm is mathematically proven","False, because modern CPUs may reorder memory instructions breaking the algorithm","True, but only for uniprocessor systems","False, because it requires OS support"],
+    ans:[1],
+    exp:"Peterson's algorithm is proven correct under the assumption of sequential consistency. However, modern CPUs perform out-of-order execution and memory reordering (e.g., store-load reordering on x86). Without memory barriers (fences), the flag and turn writes may not be visible in the correct order to the other CPU, breaking mutual exclusion."
+  },
+  {
+    id:6, type:"MSQ", difficulty:"basic", topic:"Software Solutions",
+    q:"Which of the following are known limitations of purely software-based synchronization solutions like Dekker's or Peterson's algorithm?",
+    opts:["They do not scale well to N > 2 processes","They require busy-waiting (spin loops)","They may fail on processors with relaxed memory models","They require kernel-mode execution"],
+    ans:[0,1,2],
+    exp:"Software solutions like Peterson's: (a) don't scale easily beyond 2 processes without complex extensions, (b) use busy-waiting consuming CPU cycles, and (c) are incorrect on CPUs with weak/relaxed memory consistency models without additional memory fences. They do NOT require kernel mode — they run entirely in user space."
+  },
+  // ── HARDWARE SOLUTIONS ──
+  {
+    id:7, type:"MCQ", difficulty:"moderate", topic:"Hardware Solutions",
+    q:"The <code>test_and_set()</code> hardware instruction atomically:",
+    opts:["Sets a lock to false and returns its old value","Reads a lock, sets it to true, and returns the old value","Compares and swaps two memory locations","Disables all interrupts"],
+    ans:[1],
+    exp:"test_and_set(&lock) atomically: reads the current value of lock, sets lock to TRUE, returns the old value. If it returns FALSE, the process acquired the lock (was free). If TRUE, the lock was already held. The atomicity is guaranteed by hardware, preventing race conditions."
+  },
+  {
+    id:8, type:"MCQ", difficulty:"advanced", topic:"Hardware Solutions",
+    q:"Compare-And-Swap (CAS) has an advantage over test-and-set primarily because:",
+    opts:["It is faster on modern hardware","It can be used to implement lock-free data structures","It does not require special CPU instructions","It eliminates the need for OS intervention"],
+    ans:[1],
+    exp:"CAS(address, expected, new_value) succeeds only if the current value equals expected, then atomically sets it to new_value. This conditional swap enables building lock-free and wait-free algorithms for stacks, queues, and counters — impossible with simple test-and-set alone. Both require special CPU instructions."
+  },
+  // ── MUTEX ──
+  {
+    id:9, type:"MCQ", difficulty:"basic", topic:"Mutex",
+    q:"A mutex (mutual exclusion lock) differs from a binary semaphore in that:",
+    opts:["A mutex can be released by any thread; a semaphore cannot","A mutex must be released only by the thread that acquired it; a semaphore has no such restriction","A mutex allows multiple threads in the critical section; a semaphore does not","A mutex uses busy-waiting; a semaphore does not"],
+    ans:[1],
+    exp:"A mutex has the concept of ownership — only the thread that locked it can unlock it. A binary semaphore has no ownership: any thread can call signal(). This makes mutexes safer for protecting critical sections and enables priority inheritance protocols."
+  },
+  // ── SEMAPHORES ──
+  {
+    id:10, type:"MCQ", difficulty:"moderate", topic:"Semaphores",
+    q:"A counting semaphore is initialized to N. What does this signify?",
+    opts:["N processes will be blocked","N resources are available","The semaphore will block after N signals","The queue can hold N waiting processes"],
+    ans:[1],
+    exp:"A counting semaphore value represents the count of available resources. Initialized to N means N resources are free. Each wait() decrements (acquires a resource); each signal() increments (releases). When value reaches 0, subsequent wait() calls block."
+  },
+  {
+    id:11, type:"MSQ", difficulty:"advanced", topic:"Semaphores",
+    q:"Consider: <code>sem S1=0, S2=0</code>. P1: A; signal(S1); wait(S2); C. P2: wait(S1); B; signal(S2). Which orderings of A, B, C are ALWAYS guaranteed?",
+    opts:["A always before B","B always before C","A always before C","C always before A"],
+    ans:[0,1,2],
+    exp:"S1=0 ensures P2 waits for P1's signal after A, so A→B. S2=0 ensures P1 waits for P2's signal after B, so B→C. By transitivity, A→B→C is always guaranteed. C before A is never guaranteed — it's the opposite of the forced ordering."
+  },
+  {
+    id:12, type:"MCQ", difficulty:"moderate", topic:"Semaphores",
+    q:"What is a spurious wakeup in the context of condition variables and how is it typically handled?",
+    opts:["A wakeup due to signal() from another thread; handled by checking the condition once","A wakeup not caused by a signal or broadcast; handled by re-checking the condition in a while loop","A wakeup caused by a hardware interrupt; handled by the OS","A deadlock situation caused by multiple signals"],
+    ans:[1],
+    exp:"A spurious wakeup is when a thread waiting on a condition variable wakes up without being signaled — this can happen due to OS scheduling artifacts. The standard fix is to always re-check the condition in a while loop (not if), so the thread goes back to waiting if the condition is still false."
+  },
+  // ── SPINLOCKS ──
+  {
+    id:13, type:"MCQ", difficulty:"moderate", topic:"Spinlocks",
+    q:"Spinlocks are preferred over mutex sleeps in which scenario?",
+    opts:["When the critical section is very large","When the lock wait time is expected to be longer than the cost of two context switches","When the critical section is very short and the system is multiprocessor","On single-processor systems to avoid busy-waiting"],
+    ans:[2],
+    exp:"On multiprocessors, if the CS is very short, spinning briefly wastes less CPU time than the overhead of: (1) blocking the thread, (2) context switch out, (3) waking it up later, (4) context switch in. On single-CPU systems, spinlocks are counterproductive — the CPU holding the lock cannot run while the spinning thread occupies the CPU."
+  },
+  // ── PRODUCER-CONSUMER ──
+  {
+    id:14, type:"MCQ", difficulty:"moderate", topic:"Producer-Consumer",
+    q:"In the classic bounded-buffer (Producer-Consumer) problem using semaphores, three semaphores are used: mutex=1, empty=N, full=0. What happens if a producer calls <code>wait(mutex)</code> before <code>wait(empty)</code>?",
+    opts:["The solution still works correctly","Deadlock can occur if the buffer is full","The consumer will be starved","The empty count will go negative"],
+    ans:[1],
+    exp:"If a producer calls wait(mutex) first and then the buffer is full (empty=0), the producer blocks on wait(empty) while holding mutex. Now the consumer needs mutex to consume and free a slot, but mutex=0. This is a classic deadlock. Always acquire the resource semaphore (empty/full) before the mutex."
+  },
+  {
+    id:15, type:"MSQ", difficulty:"advanced", topic:"Producer-Consumer",
+    q:"In the Producer-Consumer problem with semaphores: <code>mutex=1, empty=N, full=0</code>. Which of the following are TRUE?",
+    opts:["Producer: wait(empty) then wait(mutex) prevents deadlock","Consumer: wait(full) then wait(mutex) is correct order","If producer does wait(mutex) then wait(empty), deadlock can occur when buffer is full","The full semaphore tracks available items to consume"],
+    ans:[0,1,2,3],
+    exp:"All four are correct: (A) Acquiring resource semaphore before mutex prevents deadlock. (B) Consumer correctly waits on full first. (C) Reversed order causes deadlock when buffer is full. (D) full semaphore is initialized to 0 and incremented by producer, tracking items available for consumers."
+  },
+  // ── READER-WRITER ──
+  {
+    id:16, type:"MCQ", difficulty:"moderate", topic:"Reader-Writer",
+    q:"In the first Readers-Writers problem (readers-preference), which scenario can occur?",
+    opts:["Multiple writers can write simultaneously","Writers can starve","Readers can starve","Mutual exclusion between readers is enforced"],
+    ans:[1],
+    exp:"In the readers-preference solution: as long as at least one reader is reading, new readers are allowed in without waiting. If readers continuously arrive, writers never get access — this is writer starvation. The readers-preference solution ensures readers don't starve but writers can."
+  },
+  // ── DINING PHILOSOPHERS ──
+  {
+    id:17, type:"MCQ", difficulty:"moderate", topic:"Dining Philosophers",
+    q:"In the Dining Philosophers problem with 5 philosophers, each picking up the left fork first and then the right fork, what can occur?",
+    opts:["Starvation only","Deadlock only","Both deadlock and starvation","Neither, as forks are shared"],
+    ans:[1],
+    exp:"If all 5 philosophers simultaneously pick up their left fork, each holds one fork and waits for the right fork (held by the neighbor). This creates a circular wait → deadlock. All processes are blocked permanently. This particular scenario causes deadlock, not just starvation."
+  },
+  {
+    id:18, type:"MSQ", difficulty:"advanced", topic:"Dining Philosophers",
+    q:"Which of the following solutions CORRECTLY avoid deadlock in the Dining Philosophers problem?",
+    opts:["Allow at most 4 philosophers to sit at the table simultaneously","An asymmetric solution: odd philosophers pick left first, even pick right first","Use a waiter (monitor) that grants permission only if both forks are available","Allow a philosopher to pick up forks only in a random order"],
+    ans:[0,1,2],
+    exp:"(A) Allowing only 4 of 5 at the table breaks circular wait. (B) Asymmetric ordering breaks the circular wait pattern. (C) A monitor/waiter ensuring both forks are available atomically prevents deadlock. (D) Random order does not guarantee deadlock prevention — circular wait can still form."
+  },
+  // ── DEADLOCK CONDITIONS ──
+  {
+    id:19, type:"MCQ", difficulty:"basic", topic:"Deadlock Conditions",
+    q:"Which of the following is NOT a necessary condition for deadlock?",
+    opts:["Mutual Exclusion","Hold and Wait","Preemption","Circular Wait"],
+    ans:[2],
+    exp:"Coffman's four necessary conditions for deadlock are: (1) Mutual Exclusion, (2) Hold and Wait, (3) No Preemption, and (4) Circular Wait. 'Preemption' (the ability to forcibly take resources) is actually a condition whose ABSENCE ('No Preemption') is required. If preemption is allowed, deadlock cannot occur."
+  },
+  {
+    id:20, type:"MSQ", difficulty:"moderate", topic:"Deadlock Conditions",
+    q:"Which of the following conditions, if violated, can PREVENT deadlock?",
+    opts:["Mutual Exclusion","Hold and Wait","No Preemption","Circular Wait"],
+    ans:[0,1,2,3],
+    exp:"All four Coffman conditions must hold simultaneously for deadlock. Violating ANY ONE prevents deadlock: (A) Allow sharing (but impossible for non-shareable resources). (B) Require all resources upfront or release before new request. (C) Allow preemption of resources. (D) Impose total ordering on resource types to prevent circular wait."
+  },
+  // ── RESOURCE ALLOCATION GRAPH ──
+  {
+    id:21, type:"MCQ", difficulty:"moderate", topic:"Resource Allocation Graph",
+    q:"In a Resource Allocation Graph (RAG) with only single-instance resources, deadlock exists if and only if:",
+    opts:["There is a cycle in the graph","There is a cycle and at least one resource has multiple instances","Every process has at least one request edge","There is a wait-for cycle among processes"],
+    ans:[0],
+    exp:"For single-instance resources, a cycle in the RAG is a necessary and sufficient condition for deadlock. For multi-instance resources, a cycle is necessary but not sufficient — there may be a cycle without deadlock if some instances are still available to break the cycle."
+  },
+  {
+    id:22, type:"MCQ", difficulty:"advanced", topic:"Resource Allocation Graph",
+    q:"In a RAG with multi-instance resources, a cycle exists but there is no deadlock. This is possible because:",
+    opts:["The cycle involves only request edges","Some process outside the cycle can complete and release resources, breaking the cycle","Cycles are only deadlock indicators in single-instance RAGs","The OS can preempt resources in a cycle"],
+    ans:[1],
+    exp:"With multi-instance resources, a cycle doesn't guarantee deadlock. A process outside the cycle holding instances of the cycled resources can finish, release those instances, and allow a process in the cycle to proceed, breaking the cycle. This is why cycle = necessary but not sufficient for multi-instance resources."
+  },
+  // ── DEADLOCK AVOIDANCE ──
+  {
+    id:23, type:"MCQ", difficulty:"moderate", topic:"Deadlock Avoidance",
+    q:"Banker's Algorithm is used for deadlock avoidance. A state is considered SAFE if:",
+    opts:["No process is currently waiting for resources","There exists a safe sequence in which all processes can complete","All resources are currently available","No circular wait exists in the current allocation"],
+    ans:[1],
+    exp:"A state is safe if there exists at least one safe sequence — an ordering of all processes such that each process can be allocated its maximum needed resources using currently available resources plus resources released by previously completed processes. An unsafe state may or may not lead to deadlock."
+  },
+  {
+    id:24, type:"MCQ", difficulty:"advanced", topic:"Deadlock Avoidance",
+    q:"Banker's Algorithm has time complexity O(n²·m) where n = number of processes and m = number of resource types. The main practical limitation of Banker's Algorithm is:",
+    opts:["It is too slow for real systems","Processes must declare their maximum resource needs in advance, which is often unknown","It does not handle multiple resource types","It only works with binary semaphores"],
+    ans:[1],
+    exp:"Banker's Algorithm requires each process to declare its maximum resource requirement before execution. In practice, processes often don't know their maximum needs in advance (e.g., dynamic web servers, interactive applications). This impracticality makes Banker's Algorithm mostly theoretical."
+  },
+  // ── DEADLOCK DETECTION & RECOVERY ──
+  {
+    id:25, type:"MSQ", difficulty:"moderate", topic:"Deadlock Detection & Recovery",
+    q:"Which of the following are valid deadlock recovery strategies?",
+    opts:["Process termination (abort one or all deadlocked processes)","Resource preemption (forcibly take resources from processes)","Rollback (roll back processes to a safe checkpoint)","Increasing the number of resource instances"],
+    ans:[0,1,2],
+    exp:"Deadlock recovery uses: (A) Process termination — abort all or one-at-a-time until deadlock broken. (B) Resource preemption — select a victim, take its resources, rollback. (C) Rollback to checkpoint and restart. (D) Adding more resource instances is a design-time prevention strategy, not a runtime recovery method."
+  },
+  // ── CONDITION VARIABLES ──
+  {
+    id:26, type:"MCQ", difficulty:"moderate", topic:"Condition Variables",
+    q:"What is the key difference between <code>signal()</code> and <code>broadcast()</code> on a condition variable?",
+    opts:["signal() wakes all waiting threads; broadcast() wakes one","signal() wakes one waiting thread; broadcast() wakes all waiting threads","signal() is for semaphores; broadcast() is for mutexes","They are identical in behavior"],
+    ans:[1],
+    exp:"signal() (or notify()) wakes exactly one thread waiting on the condition variable. broadcast() (or notifyAll()) wakes ALL threads waiting on it. Use broadcast() when multiple threads might be able to proceed (e.g., after releasing multiple resources), or when unsure which thread should wake."
+  },
+  // ── DEADLOCK PREVENTION ──
+  {
+    id:27, type:"MSQ", difficulty:"advanced", topic:"Deadlock Prevention",
+    q:"Which of the following are strategies to prevent the 'Hold and Wait' condition for deadlock prevention?",
+    opts:["Require a process to request all resources at once before starting","Allow a process to request resources only when it has none","Impose a total ordering on all resource types","Use the Banker's Algorithm to check safety"],
+    ans:[0,1],
+    exp:"To prevent Hold-and-Wait: (A) Request all resources atomically at the start — process either gets all or waits with nothing held. (B) A process must release all held resources before requesting new ones. Both eliminate holding while waiting. (C) Total ordering prevents circular wait, not hold-and-wait. (D) Banker's is avoidance, not prevention."
+  },
+  // ── LINUX CASE STUDY ──
+  {
+    id:28, type:"MCQ", difficulty:"moderate", topic:"Linux Case Study",
+    q:"In the Linux kernel, which synchronization primitive is used to protect data structures that are accessed by both interrupt handlers and process context code?",
+    opts:["mutex_lock()","spin_lock_irqsave()","semaphore down()","pthread_mutex_lock()"],
+    ans:[1],
+    exp:"spin_lock_irqsave() disables local interrupts AND acquires the spinlock. This is needed when a data structure is shared between normal process context and interrupt handlers. Simply using a mutex won't work because interrupt handlers cannot sleep/block. Disabling interrupts prevents the handler from preempting the critical section."
+  },
+  {
+    id:29, type:"MCQ", difficulty:"advanced", topic:"Linux Case Study",
+    q:"Linux uses RCU (Read-Copy-Update) for synchronization. What makes RCU particularly efficient for read-heavy workloads?",
+    opts:["Readers acquire a lock that doesn't block writers","Readers execute without any locking or atomic operations","Readers use busy-waiting spinlocks","Readers and writers use the same semaphore"],
+    ans:[1],
+    exp:"RCU allows readers to access data structures with zero locking overhead — no atomic operations, no memory barriers on the read side. Writers create a copy, modify it, and then atomically replace the pointer. Old data is reclaimed only after all pre-existing readers finish. This makes reads extremely fast, at the cost of more complex writes."
+  },
+  // ── WINDOWS CASE STUDY ──
+  {
+    id:30, type:"MSQ", difficulty:"advanced", topic:"Windows Case Study",
+    q:"Windows provides several synchronization objects. Which of the following are TRUE about Windows synchronization primitives?",
+    opts:["A Windows Mutex can be owned across processes","A Critical Section is faster than a Mutex because it is user-space only","A Semaphore in Windows can have a maximum count > 1","Events in Windows can be used to signal between threads or processes"],
+    ans:[0,1,2,3],
+    exp:"All are true: (A) Windows Mutexes are kernel objects, identifiable by name, usable across processes. (B) CRITICAL_SECTION uses user-space spinning before falling to kernel — much faster than a kernel Mutex for intra-process sync. (C) CreateSemaphore() takes lMaximumCount > 1 for counting semaphores. (D) Event objects (auto/manual reset) can be named and used for inter-process signaling via WaitForSingleObject/SetEvent."
+  }
+];
+
+// ── STATE ──
+let attempted = new Set();
+let correct = new Set();
+let userAnswers = {};
+let currentFilter = 'all';
+
+function buildCards() {
+  const container = document.getElementById('main-container');
+  container.innerHTML = '';
+
+  const topics = [...new Set(questions.map(q=>q.topic))];
+  
+  topics.forEach(topic => {
+    const topicQs = questions.filter(q=>q.topic===topic);
+    const div = document.createElement('div');
+    div.className='topic-group';
+    div.dataset.topic=topic;
+    div.innerHTML=`<div class="topic-divider"><span>${topic}</span></div>`;
+    
+    topicQs.forEach(q=>{
+      div.appendChild(buildCard(q));
+    });
+    container.appendChild(div);
+  });
+  applyFilter(currentFilter);
+}
+
+function buildCard(q) {
+  const card = document.createElement('div');
+  card.className = 'q-card';
+  card.dataset.type = q.type;
+  card.dataset.diff = q.difficulty;
+  card.dataset.id = q.id;
+
+  const optHtml = q.opts.map((o,i)=>`
+    <div class="option" data-idx="${i}" onclick="selectOpt(${q.id},${i},this)">
+      <span class="opt-label">${String.fromCharCode(65+i)}</span>
+      <span class="opt-text">${o}</span>
+    </div>`).join('');
+
+  const msqNote = q.type==='MSQ' ? '<span style="font-size:11px;color:var(--msq-tag);margin-left:4px">(Select all correct)</span>' : '';
+
+  card.innerHTML = `
+    <div class="q-header" onclick="toggleCard(${q.id},this)">
+      <span class="q-num">Q${q.id}.</span>
+      <div class="q-meta">
+        <div class="q-tags">
+          <span class="tag tag-${q.type.toLowerCase()}">${q.type}</span>
+          <span class="tag tag-${q.difficulty}">${q.difficulty}</span>
+        </div>
+        <div class="q-text">${q.q}${msqNote}</div>
+      </div>
+      <span class="q-chevron">⌄</span>
+    </div>
+    <div class="q-options" id="opts-${q.id}">${optHtml}</div>
+    <div class="q-answer-zone" id="az-${q.id}" style="padding-bottom:14px">
+      <button class="submit-btn" id="sub-${q.id}" onclick="submitAnswer(${q.id})">CHECK ANSWER</button>
+    </div>
+    <div class="explanation" id="exp-${q.id}">
+      <div class="exp-label">▸ Explanation</div>
+      <div class="ans-line" id="ansline-${q.id}"></div>
+      <div class="exp-text">${q.exp}</div>
+    </div>`;
+  return card;
+}
+
+function toggleCard(id, header) {
+  const card = header.closest('.q-card');
+  card.classList.toggle('open');
+}
+
+function selectOpt(qid, idx, el) {
+  const q = questions.find(x=>x.id===qid);
+  if(attempted.has(qid)) return;
+  
+  if(q.type==='MCQ'){
+    document.querySelectorAll(`#opts-${qid} .option`).forEach(o=>o.classList.remove('selected'));
+    el.classList.add('selected');
+    userAnswers[qid] = [idx];
+  } else {
+    el.classList.toggle('selected');
+    const sel = [...document.querySelectorAll(`#opts-${qid} .option.selected`)].map(o=>parseInt(o.dataset.idx));
+    userAnswers[qid] = sel;
+  }
+}
+
+function submitAnswer(qid) {
+  if(attempted.has(qid)) return;
+  const q = questions.find(x=>x.id===qid);
+  const ua = userAnswers[qid] || [];
+  if(ua.length===0){ alert('Please select an answer first.'); return; }
+
+  attempted.add(qid);
+  const isCorrect = arrEq(ua.slice().sort(), q.ans.slice().sort());
+  if(isCorrect) correct.add(qid);
+
+  // Mark options
+  document.querySelectorAll(`#opts-${qid} .option`).forEach(o=>{
+    const i = parseInt(o.dataset.idx);
+    if(q.ans.includes(i)) o.classList.add('correct');
+    else if(ua.includes(i)) o.classList.add('wrong');
+    o.style.cursor='default';
+  });
+
+  // Show explanation
+  const exp = document.getElementById(`exp-${qid}`);
+  exp.classList.add('show');
+  const ansLetters = q.ans.map(i=>String.fromCharCode(65+i)).join(', ');
+  document.getElementById(`ansline-${qid}`).textContent = `Correct Answer: ${ansLetters}`;
+
+  document.getElementById(`sub-${qid}`).disabled = true;
+  updateStats();
+}
+
+function arrEq(a,b){ return JSON.stringify(a)===JSON.stringify(b); }
+
+function updateStats() {
+  document.getElementById('attempted-count').textContent = attempted.size;
+  document.getElementById('correct-count').textContent = correct.size;
+  document.getElementById('score-display').textContent = `Score: ${correct.size} / ${attempted.size}`;
+  const pct = (attempted.size / questions.length) * 100;
+  document.getElementById('progress-bar').style.width = pct+'%';
+}
+
+function filterQ(type, btn) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilter(type);
+}
+
+function applyFilter(type) {
+  questions.forEach(q=>{
+    const card = document.querySelector(`.q-card[data-id="${q.id}"]`);
+    if(!card) return;
+    let show = type==='all'
+      || type===q.type
+      || type===q.difficulty;
+    card.style.display = show ? '' : 'none';
+  });
+  // Hide empty topic groups
+  document.querySelectorAll('.topic-group').forEach(g=>{
+    const visible = [...g.querySelectorAll('.q-card')].some(c=>c.style.display!=='none');
+    g.style.display = visible ? '' : 'none';
+  });
+}
+
+buildCards();
+</script>
+</body>
+</html>

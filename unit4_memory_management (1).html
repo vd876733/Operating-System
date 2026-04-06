@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unit 4 – Memory Management | Operating Systems</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e3a5f;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --accent3: #f59e0b;
+    --accent4: #10b981;
+    --accent5: #a78bfa;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    --heading: #f0f9ff;
+    --code-bg: #0d1117;
+    --danger: #ef4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Lora', serif;
+    font-size: 16px;
+    line-height: 1.85;
+    min-height: 100vh;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── SIDEBAR ─────────────────────────────── */
+  #sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: 270px; height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    z-index: 100;
+    padding: 24px 0;
+  }
+
+  #sidebar::-webkit-scrollbar { width: 4px; }
+  #sidebar::-webkit-scrollbar-track { background: transparent; }
+  #sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .sidebar-header {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+
+  .sidebar-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .sidebar-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--heading);
+    line-height: 1.3;
+  }
+
+  .nav-section { padding: 4px 0; }
+
+  .nav-section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 8px 20px 4px;
+  }
+
+  .nav-link {
+    display: block;
+    padding: 7px 20px;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .nav-link:hover, .nav-link.active {
+    color: var(--accent2);
+    border-left-color: var(--accent2);
+    background: rgba(6,182,212,0.05);
+    padding-left: 24px;
+  }
+
+  /* ── MAIN ─────────────────────────────────── */
+  #main {
+    margin-left: 270px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #0d1b35 0%, #0b0f1a 60%);
+    border-bottom: 1px solid var(--border);
+    padding: 80px 60px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::after {
+    content: 'MEM';
+    position: absolute;
+    right: 60px; top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Syne', sans-serif;
+    font-size: 160px;
+    font-weight: 800;
+    color: rgba(59,130,246,0.06);
+    letter-spacing: -8px;
+    pointer-events: none;
+  }
+
+  .hero-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--heading);
+    line-height: 1.1;
+    margin-bottom: 16px;
+    max-width: 600px;
+  }
+
+  .hero h1 span { color: var(--accent2); }
+
+  .hero-sub {
+    color: var(--text-muted);
+    font-size: 15px;
+    max-width: 520px;
+    margin-bottom: 32px;
+  }
+
+  .topic-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    border: 1px solid;
+  }
+
+  .chip-blue { border-color: var(--accent); color: var(--accent); background: rgba(59,130,246,0.08); }
+  .chip-cyan { border-color: var(--accent2); color: var(--accent2); background: rgba(6,182,212,0.08); }
+  .chip-amber { border-color: var(--accent3); color: var(--accent3); background: rgba(245,158,11,0.08); }
+  .chip-green { border-color: var(--accent4); color: var(--accent4); background: rgba(16,185,129,0.08); }
+  .chip-purple { border-color: var(--accent5); color: var(--accent5); background: rgba(167,139,250,0.08); }
+
+  /* Content area */
+  .content {
+    max-width: 900px;
+    padding: 60px 60px 100px;
+  }
+
+  /* Section */
+  .section {
+    margin-bottom: 80px;
+    scroll-margin-top: 30px;
+  }
+
+  .section-number {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .section > h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--heading);
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+
+  .section-divider {
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    margin-bottom: 28px;
+  }
+
+  p { margin-bottom: 16px; }
+
+  /* Subsection */
+  .subsection {
+    margin-bottom: 36px;
+  }
+
+  .subsection h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--accent2);
+    margin-bottom: 14px;
+    padding-left: 14px;
+    border-left: 3px solid var(--accent2);
+  }
+
+  .subsection h4 {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent3);
+    margin: 18px 0 10px;
+  }
+
+  /* Info boxes */
+  .box {
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    border-left: 4px solid;
+  }
+
+  .box-blue { background: rgba(59,130,246,0.07); border-color: var(--accent); }
+  .box-cyan { background: rgba(6,182,212,0.07); border-color: var(--accent2); }
+  .box-amber { background: rgba(245,158,11,0.07); border-color: var(--accent3); }
+  .box-green { background: rgba(16,185,129,0.07); border-color: var(--accent4); }
+  .box-purple { background: rgba(167,139,250,0.07); border-color: var(--accent5); }
+  .box-red { background: rgba(239,68,68,0.07); border-color: var(--danger); }
+
+  .box-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .box-blue .box-title { color: var(--accent); }
+  .box-cyan .box-title { color: var(--accent2); }
+  .box-amber .box-title { color: var(--accent3); }
+  .box-green .box-title { color: var(--accent4); }
+  .box-purple .box-title { color: var(--accent5); }
+  .box-red .box-title { color: var(--danger); }
+
+  /* Code */
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    background: var(--code-bg);
+    color: var(--accent2);
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #7dd3fc;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  pre .kw { color: #c084fc; }
+  pre .fn { color: #34d399; }
+  pre .str { color: #fbbf24; }
+  pre .cm { color: #6b7280; font-style: italic; }
+  pre .num { color: #f87171; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 14px;
+  }
+
+  th {
+    background: var(--surface2);
+    color: var(--accent2);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+  }
+
+  td {
+    padding: 11px 16px;
+    border-bottom: 1px solid rgba(30,58,95,0.5);
+    color: var(--text);
+  }
+
+  tr:hover td { background: rgba(59,130,246,0.04); }
+
+  /* Lists */
+  ul, ol {
+    padding-left: 22px;
+    margin: 12px 0;
+  }
+
+  li { margin-bottom: 7px; }
+
+  li::marker { color: var(--accent); }
+
+  /* ── DIAGRAMS (SVG-based) ─────────────────── */
+  .diagram-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+
+  .diagram-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  /* Key-value highlight row */
+  .kv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .kv-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .kv-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .kv-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--heading);
+  }
+
+  /* Step list */
+  .step-list { list-style: none; padding: 0; counter-reset: steps; }
+
+  .step-list li {
+    counter-increment: steps;
+    padding: 12px 16px 12px 54px;
+    position: relative;
+    border-left: 1px dashed var(--border);
+    margin-left: 20px;
+    margin-bottom: 4px;
+  }
+
+  .step-list li::before {
+    content: counter(steps);
+    position: absolute;
+    left: -20px; top: 10px;
+    width: 36px; height: 36px;
+    background: var(--accent);
+    color: white;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Comparison cards */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .compare-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+  }
+
+  .compare-card h5 {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .compare-card ul { font-size: 14px; }
+
+  /* Back-to-top */
+  #btt {
+    position: fixed;
+    bottom: 28px; right: 28px;
+    background: var(--accent);
+    color: white;
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    z-index: 200;
+    box-shadow: 0 4px 20px rgba(59,130,246,0.4);
+    text-decoration: none;
+    transition: transform 0.2s;
+  }
+  #btt:hover { transform: translateY(-3px); }
+
+  @media (max-width: 900px) {
+    #sidebar { display: none; }
+    #main { margin-left: 0; }
+    .hero { padding: 40px 24px 36px; }
+    .hero h1 { font-size: 32px; }
+    .content { padding: 36px 24px 80px; }
+    .compare-grid { grid-template-columns: 1fr; }
+    .hero::after { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-label">OS · Unit 4</div>
+    <div class="sidebar-title">Memory Management</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Topics</div>
+    <a class="nav-link" href="#s1">1. Address Bus & Memory Access</a>
+    <a class="nav-link" href="#s2">2. Process Memory View</a>
+    <a class="nav-link" href="#s3">3. Memory Usage Requirements</a>
+    <a class="nav-link" href="#s4">4. Virtual Memory & System Calls</a>
+    <a class="nav-link" href="#s5">5. Address Translation</a>
+    <a class="nav-link" href="#s6">6. Segmentation</a>
+    <a class="nav-link" href="#s7">7. Paging</a>
+    <a class="nav-link" href="#s8">8. Page Faults, Sharing & Swapping</a>
+    <a class="nav-link" href="#s9">9. Memory Bookkeeping</a>
+    <a class="nav-link" href="#s10">10. Case Study: Linux</a>
+    <a class="nav-link" href="#s11">11. Case Study: Windows</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag">Operating Systems &nbsp;·&nbsp; Unit IV</div>
+    <h1>Memory<br><span>Management</span></h1>
+    <p class="hero-sub">Comprehensive notes covering address translation, virtual memory, paging, page faults, swapping, and OS-level memory bookkeeping.</p>
+    <div class="topic-chips">
+      <span class="chip chip-blue">Address Bus</span>
+      <span class="chip chip-cyan">Virtual Memory</span>
+      <span class="chip chip-amber">Paging</span>
+      <span class="chip chip-green">Segmentation</span>
+      <span class="chip chip-purple">Page Faults</span>
+      <span class="chip chip-blue">mmap / sbrk</span>
+      <span class="chip chip-cyan">Swapping</span>
+      <span class="chip chip-amber">Linux / Windows</span>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SECTION 1 -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section" id="s1">
+      <div class="section-number">01 — MEMORY ACCESS</div>
+      <h2>Address Bus & Memory Access</h2>
+      <div class="section-divider"></div>
+
+      <p>Every CPU communicates with RAM through a set of parallel signal lines called the <strong>address bus</strong>, <strong>data bus</strong>, and <strong>control bus</strong>. Understanding how these work is fundamental to understanding memory management.</p>
+
+      <div class="subsection">
+        <h3>The Memory Bus Architecture</h3>
+        <p>Three buses cooperate for each memory operation:</p>
+        <ul>
+          <li><strong>Address Bus</strong> – Carries the memory address the CPU wants to read from or write to. It is <em>unidirectional</em> (CPU → Memory). Width determines addressable space: a 32-bit address bus → 2<sup>32</sup> = 4 GB; a 64-bit bus → 2<sup>64</sup> bytes (16 exabytes).</li>
+          <li><strong>Data Bus</strong> – Carries the actual data being transferred. It is <em>bidirectional</em>. Width (8, 16, 32, 64 bits) determines how much data moves per cycle.</li>
+          <li><strong>Control Bus</strong> – Carries signals like READ, WRITE, INTERRUPT, CLOCK, and MEMORY READY to coordinate the operation.</li>
+        </ul>
+
+        <!-- DIAGRAM: Bus Architecture -->
+        <div class="diagram-wrap">
+          <div class="diagram-title">Fig 1.1 — CPU–Memory Bus Architecture</div>
+          <svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" width="100%">
+            <defs>
+              <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#3b82f6"/>
+              </marker>
+              <marker id="arr2" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto">
+                <polygon points="8 0, 0 3, 8 6" fill="#06b6d4"/>
+              </marker>
+              <marker id="arr3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#a78bfa"/>
+              </marker>
+            </defs>
+            <!-- CPU Box -->
+            <rect x="30" y="60" width="160" height="100" rx="8" fill="#1a2235" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="110" y="100" text-anchor="middle" font-family="Syne,sans-serif" font-size="14" font-weight="700" fill="#f0f9ff">CPU</text>
+            <text x="110" y="120" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">ALU · Registers</text>
+            <text x="110" y="140" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">Cache (L1/L2/L3)</text>
+            <!-- RAM Box -->
+            <rect x="530" y="60" width="160" height="100" rx="8" fill="#1a2235" stroke="#06b6d4" stroke-width="1.5"/>
+            <text x="610" y="100" text-anchor="middle" font-family="Syne,sans-serif" font-size="14" font-weight="700" fill="#f0f9ff">RAM</text>
+            <text x="610" y="120" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">Physical Memory</text>
+            <text x="610" y="140" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">DRAM Cells</text>
+            <!-- Address Bus arrow (top) -->
+            <line x1="190" y1="80" x2="530" y2="80" stroke="#3b82f6" stroke-width="2" marker-end="url(#arr)"/>
+            <text x="360" y="72" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#3b82f6">Address Bus (64-bit) →</text>
+            <!-- Data Bus arrow (middle, bidirectional) -->
+            <line x1="190" y1="110" x2="530" y2="110" stroke="#06b6d4" stroke-width="2" marker-end="url(#arr)" marker-start="url(#arr2)"/>
+            <text x="360" y="102" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#06b6d4">← Data Bus (64-bit) →</text>
+            <!-- Control Bus arrow (bottom) -->
+            <line x1="190" y1="140" x2="530" y2="140" stroke="#a78bfa" stroke-width="2" marker-end="url(#arr3)"/>
+            <text x="360" y="158" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#a78bfa">Control Bus (READ/WRITE/IRQ)</text>
+            <!-- labels -->
+            <text x="360" y="200" text-anchor="middle" font-family="Lora,serif" font-size="12" fill="#64748b" font-style="italic">System Bus connecting CPU and main memory</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Memory Access Cycle</h3>
+        <p>Each time the CPU reads or writes memory, it follows a precise sequence:</p>
+        <ol class="step-list">
+          <li>CPU places the target <strong>physical address</strong> on the address bus.</li>
+          <li>CPU asserts READ or WRITE on the control bus.</li>
+          <li>Memory controller decodes the address and selects the correct RAM row/column.</li>
+          <li>For a READ: RAM drives data onto the data bus; CPU latches it into a register. For a WRITE: CPU drives data onto the bus; RAM stores it.</li>
+          <li>Memory signals READY; CPU completes the cycle (takes 50–100 ns for DRAM, 1–5 ns for cache).</li>
+        </ol>
+      </div>
+
+      <div class="subsection">
+        <h3>Memory Hierarchy & Latency</h3>
+        <table>
+          <thead><tr><th>Level</th><th>Type</th><th>Latency</th><th>Capacity</th><th>Managed by</th></tr></thead>
+          <tbody>
+            <tr><td>L1 Cache</td><td>SRAM</td><td>~1 ns</td><td>32–64 KB</td><td>Hardware</td></tr>
+            <tr><td>L2 Cache</td><td>SRAM</td><td>~4 ns</td><td>256 KB – 1 MB</td><td>Hardware</td></tr>
+            <tr><td>L3 Cache</td><td>SRAM</td><td>~10 ns</td><td>4–64 MB</td><td>Hardware</td></tr>
+            <tr><td>Main Memory</td><td>DRAM</td><td>~60–100 ns</td><td>4–512 GB</td><td>OS + Hardware</td></tr>
+            <tr><td>SSD</td><td>Flash</td><td>~100 µs</td><td>128 GB – 4 TB</td><td>OS (swap)</td></tr>
+            <tr><td>HDD</td><td>Magnetic</td><td>~10 ms</td><td>500 GB – 20 TB</td><td>OS (swap)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SECTION 2 -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section" id="s2">
+      <div class="section-number">02 — PROCESS LAYOUT</div>
+      <h2>Memory View of a Process</h2>
+      <div class="section-divider"></div>
+      <p>When an OS loads a program, it provides each process an illusion of owning a large, private, contiguous address space. This space is divided into well-defined <strong>segments</strong> or <strong>regions</strong>.</p>
+
+      <div class="subsection">
+        <h3>Classical Process Memory Layout</h3>
+
+        <!-- DIAGRAM: Process Memory Map -->
+        <div class="diagram-wrap">
+          <div class="diagram-title">Fig 2.1 — Virtual Address Space of a Process (low → high)</div>
+          <svg viewBox="0 0 420 520" xmlns="http://www.w3.org/2000/svg" width="100%" style="max-width:420px;display:block;margin:auto;">
+            <!-- segments -->
+            <!-- Kernel (reserved) -->
+            <rect x="60" y="10" width="200" height="50" rx="4" fill="#1e1030" stroke="#a78bfa" stroke-width="1.5"/>
+            <text x="160" y="32" text-anchor="middle" font-family="Syne,sans-serif" font-size="13" font-weight="700" fill="#a78bfa">Kernel Space</text>
+            <text x="160" y="50" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#64748b">(not accessible to user)</text>
+            <!-- Stack -->
+            <rect x="60" y="70" width="200" height="80" rx="4" fill="#1a2a1a" stroke="#10b981" stroke-width="1.5"/>
+            <text x="160" y="98" text-anchor="middle" font-family="Syne,sans-serif" font-size="13" font-weight="700" fill="#10b981">Stack</text>
+            <text x="160" y="116" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">local vars, return addrs</text>
+            <text x="160" y="132" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">grows ↓ (downward)</text>
+            <!-- Arrow down -->
+            <text x="280" y="155" font-family="IBM Plex Mono,monospace" font-size="20" fill="#10b981">↓</text>
+            <!-- Gap (unmapped) -->
+            <rect x="60" y="160" width="200" height="60" rx="4" fill="#111827" stroke="#1e3a5f" stroke-width="1" stroke-dasharray="6,3"/>
+            <text x="160" y="188" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#374151">unmapped</text>
+            <text x="160" y="206" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#374151">(grows dynamically)</text>
+            <!-- Arrow up (heap) -->
+            <text x="280" y="240" font-family="IBM Plex Mono,monospace" font-size="20" fill="#3b82f6">↑</text>
+            <!-- Heap -->
+            <rect x="60" y="230" width="200" height="80" rx="4" fill="#0f1f35" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="160" y="258" text-anchor="middle" font-family="Syne,sans-serif" font-size="13" font-weight="700" fill="#3b82f6">Heap</text>
+            <text x="160" y="276" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">dynamic allocations</text>
+            <text x="160" y="292" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">malloc/new — grows ↑</text>
+            <!-- BSS -->
+            <rect x="60" y="320" width="200" height="50" rx="4" fill="#1a1a0f" stroke="#f59e0b" stroke-width="1.5"/>
+            <text x="160" y="344" text-anchor="middle" font-family="Syne,sans-serif" font-size="13" font-weight="700" fill="#f59e0b">BSS Segment</text>
+            <text x="160" y="362" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">uninitialised globals</text>
+            <!-- Data -->
+            <rect x="60" y="378" width="200" height="50" rx="4" fill="#1a1a0f" stroke="#fbbf24" stroke-width="1.5"/>
+            <text x="160" y="402" text-anchor="middle" font-family="Syne,sans-serif" font-size="13" font-weight="700" fill="#fbbf24">Data Segment</text>
+            <text x="160" y="420" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">initialised globals &amp; statics</text>
+            <!-- Text/Code -->
+            <rect x="60" y="436" width="200" height="60" rx="4" fill="#0f1a2e" stroke="#06b6d4" stroke-width="1.5"/>
+            <text x="160" y="462" text-anchor="middle" font-family="Syne,sans-serif" font-size="13" font-weight="700" fill="#06b6d4">Text (Code) Segment</text>
+            <text x="160" y="480" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">executable instructions</text>
+            <text x="160" y="496" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">read-only</text>
+            <!-- Address labels -->
+            <text x="50" y="22" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="10" fill="#64748b">0xFFFF…</text>
+            <text x="50" y="498" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="10" fill="#64748b">0x0000…</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Segment Descriptions</h3>
+
+        <h4>📦 Text (Code) Segment</h4>
+        <p>Contains the compiled machine instructions of the program. Marked <strong>read-only and executable</strong> to prevent accidental or malicious modification. Shared between multiple instances of the same program (e.g., two <code>bash</code> shells share one copy of the code).</p>
+
+        <h4>📊 Data Segment</h4>
+        <p>Holds <strong>initialized global and static variables</strong>. For example, <code>int x = 10;</code> at global scope lives here. It is read-write. Divided into:</p>
+        <ul>
+          <li><strong>Initialized data</strong> (.data): variables with explicit initial values.</li>
+          <li><strong>BSS (Block Started by Symbol)</strong> (.bss): zero-initialized globals. The OS zeroes this region automatically — the binary doesn't need to store these bytes, keeping the executable file small.</li>
+        </ul>
+
+        <h4>🔵 Heap</h4>
+        <p>Region for <strong>dynamic memory allocation</strong> at runtime. Functions like <code>malloc()</code>, <code>calloc()</code>, <code>new</code> allocate from here. The heap <strong>grows upward</strong> (toward higher addresses) as more memory is requested. A runtime library (glibc, jemalloc, etc.) manages free-lists within the heap. The OS expands the heap via <code>brk()</code>/<code>sbrk()</code> system calls.</p>
+
+        <h4>📚 Stack</h4>
+        <p>Stores <strong>local variables, function parameters, return addresses, and saved registers</strong>. Organized as a LIFO structure. <strong>Grows downward</strong> (toward lower addresses). Each function call pushes a <em>stack frame</em>; returning pops it. The OS sets a maximum stack size (e.g., 8 MB on Linux by default).</p>
+
+        <div class="box box-amber">
+          <div class="box-title">⚠️ Stack vs Heap Growth</div>
+          <p>Stack grows <strong>downward</strong>; Heap grows <strong>upward</strong>. They grow toward each other and a <em>stack overflow</em> or <em>heap overflow</em> occurs when they collide. Modern OS uses guard pages to detect this.</p>
+        </div>
+
+        <h4>🔒 Kernel Space</h4>
+        <p>The upper portion of the virtual address space is reserved for the OS kernel. On 32-bit Linux, the split is typically 3 GB (user) / 1 GB (kernel). User-space code cannot access kernel addresses — any attempt triggers a protection fault.</p>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SECTION 3 -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section" id="s3">
+      <div class="section-number">03 — REQUIREMENTS</div>
+      <h2>Process Memory Usage Requirements</h2>
+      <div class="section-divider"></div>
+      <p>An operating system must satisfy several key requirements when managing memory for processes:</p>
+
+      <div class="kv-grid">
+        <div class="kv-card">
+          <div class="kv-label">Relocation</div>
+          <div class="kv-value">Programs loaded anywhere in RAM</div>
+        </div>
+        <div class="kv-card">
+          <div class="kv-label">Protection</div>
+          <div class="kv-value">Processes isolated from each other</div>
+        </div>
+        <div class="kv-card">
+          <div class="kv-label">Sharing</div>
+          <div class="kv-value">Shared libraries, copy-on-write</div>
+        </div>
+        <div class="kv-card">
+          <div class="kv-label">Logical Organisation</div>
+          <div class="kv-value">Segments reflect program structure</div>
+        </div>
+        <div class="kv-card">
+          <div class="kv-label">Physical Organisation</div>
+          <div class="kv-value">Efficient use of RAM and disk</div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Relocation</h3>
+        <p>When a program is compiled, the linker assigns addresses starting at 0. However, when it is loaded into RAM, another process may already occupy address 0. The OS (or hardware) must <strong>relocate</strong> all addresses — translating program-relative (logical) addresses to physical RAM addresses. This is done either at load time (slow, static) or at run time using the MMU (preferred).</p>
+
+        <h3>Protection</h3>
+        <p>Each process must be prevented from reading or writing another process's memory. The CPU enforces this using the <strong>Memory Management Unit (MMU)</strong>, which checks every memory access against permissions set by the OS. A violation raises a <em>segmentation fault</em> (SIGSEGV).</p>
+
+        <h3>Sharing</h3>
+        <p>Multiple processes may need to share certain memory regions — for example, a shared library (<code>libc.so</code>) loaded once but used by thousands of processes. The OS allows <em>controlled sharing</em> of physical pages while still providing isolated virtual address spaces. Techniques include <strong>copy-on-write (COW)</strong> after <code>fork()</code>.</p>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SECTION 4 -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section" id="s4">
+      <div class="section-number">04 — VIRTUAL MEMORY</div>
+      <h2>Virtual Memory & System Calls</h2>
+      <div class="section-divider"></div>
+      <p><strong>Virtual memory</strong> is the central abstraction of memory management. Each process gets its own large virtual address space, independent of physical RAM size. The OS and MMU collaborate to translate virtual addresses to physical addresses transparently.</p>
+
+      <div class="subsection">
+        <h3>The Address Space Abstraction</h3>
+        <p>Virtual memory creates the illusion that each process has exclusive access to a vast, contiguous memory space (e.g., 0 to 2<sup>48</sup> bytes on x86-64). In reality, only <em>actively used pages</em> are backed by physical RAM; the rest can reside on disk or simply be unmapped.</p>
+
+        <div class="box box-green">
+          <div class="box-title">✅ Benefits of Virtual Memory</div>
+          <ul>
+            <li>Programs larger than physical RAM can run (using swap).</li>
+            <li>Isolation: one process cannot corrupt another's memory.</li>
+            <li>Simplified linking: each process can use the same virtual addresses.</li>
+            <li>Efficient sharing of code (shared libraries, fork COW).</li>
+            <li>Demand paging: only load pages when actually needed.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Key System Calls</h3>
+
+        <h4><code>mmap()</code> — Map Memory</h4>
+        <p>Creates a new mapping in the virtual address space of the calling process. Can map a file into memory or create an anonymous mapping (backed by RAM/swap).</p>
+        <pre><code><span class="kw">void</span> *<span class="fn">mmap</span>(<span class="kw">void</span> *addr, size_t length, <span class="kw">int</span> prot, <span class="kw">int</span> flags,
+           <span class="kw">int</span> fd, off_t offset);
+
+<span class="cm">// Example: anonymous private mapping (like malloc internally)</span>
+<span class="kw">void</span> *mem = <span class="fn">mmap</span>(NULL, <span class="num">4096</span>,
+                  PROT_READ | PROT_WRITE,
+                  MAP_PRIVATE | MAP_ANONYMOUS,
+                  -<span class="num">1</span>, <span class="num">0</span>);
+
+<span class="cm">// Example: map a file into memory</span>
+<span class="kw">int</span> fd = <span class="fn">open</span>(<span class="str">"data.bin"</span>, O_RDONLY);
+<span class="kw">void</span> *view = <span class="fn">mmap</span>(NULL, file_size, PROT_READ, MAP_SHARED, fd, <span class="num">0</span>);</code></pre>
+
+        <table>
+          <thead><tr><th>prot flag</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><code>PROT_READ</code></td><td>Pages can be read</td></tr>
+            <tr><td><code>PROT_WRITE</code></td><td>Pages can be written</td></tr>
+            <tr><td><code>PROT_EXEC</code></td><td>Pages can be executed</td></tr>
+            <tr><td><code>PROT_NONE</code></td><td>Pages cannot be accessed (guard pages)</td></tr>
+          </tbody>
+        </table>
+
+        <h4><code>munmap()</code> — Unmap Memory</h4>
+        <p>Removes a mapping previously created by <code>mmap()</code>, releasing virtual address space. Physical pages are freed (if not shared).</p>
+        <pre><code><span class="kw">int</span> <span class="fn">munmap</span>(<span class="kw">void</span> *addr, size_t length);</code></pre>
+
+        <h4><code>sbrk()</code> / <code>brk()</code> — Adjust Heap Break</h4>
+        <p>The <em>program break</em> is the address of the first byte <em>past</em> the end of the uninitialized data segment. <code>brk()</code> sets it directly; <code>sbrk()</code> increments it. These are used internally by <code>malloc()</code> for small allocations.</p>
+        <pre><code><span class="kw">int</span>  <span class="fn">brk</span>(<span class="kw">void</span> *addr);         <span class="cm">// set break to addr</span>
+<span class="kw">void</span> *<span class="fn">sbrk</span>(intptr_t incr);  <span class="cm">// increment break by incr bytes</span>
+
+<span class="cm">// Grow heap by 4096 bytes:</span>
+<span class="kw">void</span> *old_break = <span class="fn">sbrk</span>(<span class="num">4096</span>);
+<span class="cm">// Shrink heap:</span>
+<span class="fn">sbrk</span>(-<span class="num">4096</span>);</code></pre>
+
+        <h4><code>mprotect()</code> — Change Permissions</h4>
+        <p>Alters the access protections of a memory region. Used by JIT compilers (mark pages executable after writing code), security mechanisms (make code read-only), etc.</p>
+        <pre><code><span class="kw">int</span> <span class="fn">mprotect</span>(<span class="kw">void</span> *addr, size_t len, <span class="kw">int</span> prot);
+
+<span class="cm">// Mark page as read-only after writing:</span>
+<span class="fn">mprotect</span>(page, PAGE_SIZE, PROT_READ);</code></pre>
+
+        <div class="box box-purple">
+          <div class="box-title">💡 mmap vs sbrk</div>
+          <p>Modern allocators prefer <code>mmap</code> for large allocations (&gt;128 KB) because the mapping can be independently freed with <code>munmap</code>. <code>sbrk</code> is used for small allocations since the heap can only shrink from the top. <code>sbrk(-n)</code> returns memory only if the top of the heap is free.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SECTION 5 -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section" id="s5">
+      <div class="section-number">05 — TRANSLATION</div>
+      <h2>Address Translation Mechanisms</h2>
+      <div class="section-divider"></div>
+
+      <p>The CPU generates <strong>virtual (logical) addresses</strong>. The MMU hardware translates these to <strong>physical addresses</strong> before placing them on the memory bus. Three mechanisms exist:</p>
+
+      <div class="subsection">
+        <h3>1. Static (Base + Limit) Mapping</h3>
+        <p>The simplest scheme. Each process is given a <strong>base register</strong> (start of its physical allocation) and a <strong>limit register</strong> (size of allocation). Every virtual address is checked: <code>0 ≤ VA &lt; limit</code>, then translated as <code>PA = VA + base</code>.</p>
+
+        <!-- DIAGRAM: Base+Limit -->
+        <div class="diagram-wrap">
+          <div class="diagram-title">Fig 5.1 — Base & Limit Register Translation</div>
+          <svg viewBox="0 0 680 180" xmlns="http://www.w3.org/2000/svg" width="100%">
+            <!-- VA -->
+            <rect x="20" y="65" width="130" height="50" rx="6" fill="#1a2235" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="85" y="88" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#94a3b8">Virtual Address</text>
+            <text x="85" y="106" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="14" font-weight="600" fill="#3b82f6">0x00A0</text>
+            <!-- + base -->
+            <text x="175" y="93" font-family="Syne,sans-serif" font-size="22" fill="#f0f9ff">+</text>
+            <!-- Base reg -->
+            <rect x="200" y="30" width="130" height="40" rx="6" fill="#1a2235" stroke="#f59e0b" stroke-width="1.5"/>
+            <text x="265" y="48" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">BASE</text>
+            <text x="265" y="62" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="13" fill="#f59e0b">0x4000</text>
+            <!-- Limit reg -->
+            <rect x="200" y="110" width="130" height="40" rx="6" fill="#1a2235" stroke="#ef4444" stroke-width="1.5"/>
+            <text x="265" y="128" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">LIMIT</text>
+            <text x="265" y="142" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="13" fill="#ef4444">0x2000</text>
+            <!-- comparator / adder -->
+            <rect x="360" y="55" width="120" height="70" rx="6" fill="#111827" stroke="#a78bfa" stroke-width="1.5"/>
+            <text x="420" y="84" text-anchor="middle" font-family="Syne,sans-serif" font-size="12" fill="#a78bfa">MMU</text>
+            <text x="420" y="100" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">check + add</text>
+            <!-- arrows in -->
+            <line x1="150" y1="90" x2="200" y2="90" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+            <line x1="265" y1="70" x2="360" y2="90" stroke="#f59e0b" stroke-width="1.2" marker-end="url(#arr)"/>
+            <line x1="265" y1="110" x2="360" y2="110" stroke="#ef4444" stroke-width="1.2" marker-end="url(#arr)"/>
+            <!-- PA output -->
+            <rect x="520" y="65" width="140" height="50" rx="6" fill="#1a2235" stroke="#10b981" stroke-width="1.5"/>
+            <text x="590" y="88" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#94a3b8">Physical Address</text>
+            <text x="590" y="106" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="14" font-weight="600" fill="#10b981">0x40A0</text>
+            <line x1="480" y1="90" x2="520" y2="90" stroke="#10b981" stroke-width="1.5" marker-end="url(#arr)"/>
+            <!-- fault -->
+            <text x="420" y="148" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#ef4444">if VA ≥ LIMIT → SEGFAULT</text>
+          </svg>
+        </div>
+
+        <p><strong>Drawbacks:</strong> Entire process must be contiguous in physical memory. No sharing. Internal fragmentation when multiple processes loaded.</p>
+      </div>
+
+      <div class="subsection">
+        <h3>2. Segmentation</h3>
+        <p>Covered in detail in <a href="#s6" style="color:var(--accent2)">Section 6</a>. Each program is divided into named logical segments (code, data, stack); each segment has its own base + limit. More flexible than flat base/limit.</p>
+
+        <h3>3. Paging</h3>
+        <p>Covered in detail in <a href="#s7" style="color:var(--accent2)">Section 7</a>. Both virtual and physical address spaces are divided into fixed-size blocks (<em>pages</em> / <em>frames</em>). A <em>page table</em> maps virtual pages to physical frames.</p>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SECTION 6 -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section" id="s6">
+      <div class="section-number">06 — SEGMENTATION</div>
+      <h2>Segmentation</h2>
+      <div class="section-divider"></div>
+      <p>Segmentation divides the virtual address space into variable-length <strong>segments</strong> that correspond to logical divisions of a program (code, data, heap, stack, etc.). Each segment is a contiguous block with its own base address and length.</p>
+
+      <div class="subsection">
+        <h3>Segment Descriptor Table</h3>
+        <p>A virtual address in a segmented system has two parts: <code>&lt;segment_number, offset&gt;</code>. The segment number indexes into a <strong>Segment Descriptor Table</strong> (maintained by the OS) to get the base address and limit. The physical address = base + offset, checked against limit.</p>
+
+        <!-- DIAGRAM: Segmentation -->
+        <div class="diagram-wrap">
+          <div class="diagram-title">Fig 6.1 — Segmented Address Translation</div>
+          <svg viewBox="0 0 680 240" xmlns="http://www.w3.org/2000/svg" width="100%">
+            <!-- Virtual address breakdown -->
+            <rect x="10" y="90" width="80" height="40" rx="4" fill="#1a2235" stroke="#a78bfa" stroke-width="1.5"/>
+            <text x="50" y="108" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#a78bfa">seg#</text>
+            <text x="50" y="124" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="12" fill="#f0f9ff">2</text>
+            <rect x="94" y="90" width="100" height="40" rx="4" fill="#1a2235" stroke="#06b6d4" stroke-width="1.5"/>
+            <text x="144" y="108" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#06b6d4">offset</text>
+            <text x="144" y="124" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="12" fill="#f0f9ff">0x200</text>
+            <text x="100" y="80" text-anchor="middle" font-family="Lora,serif" font-size="11" fill="#64748b" font-style="italic">Virtual Address</text>
+            <!-- Arrow to segment table -->
+            <line x1="50" y1="130" x2="50" y2="155" stroke="#a78bfa" stroke-width="1.2"/>
+            <line x1="50" y1="155" x2="280" y2="155" stroke="#a78bfa" stroke-width="1.2" marker-end="url(#arr)"/>
+            <!-- Segment Table -->
+            <rect x="280" y="20" width="200" height="160" rx="6" fill="#111827" stroke="#a78bfa" stroke-width="1.5"/>
+            <text x="380" y="42" text-anchor="middle" font-family="Syne,sans-serif" font-size="13" fill="#a78bfa" font-weight="700">Segment Table</text>
+            <line x1="280" y1="50" x2="480" y2="50" stroke="#1e3a5f" stroke-width="1"/>
+            <!-- rows -->
+            <text x="310" y="68" font-family="IBM Plex Mono,monospace" font-size="11" fill="#64748b">Seg 0 | base=0x1000 | lim=0x800</text>
+            <text x="310" y="90" font-family="IBM Plex Mono,monospace" font-size="11" fill="#64748b">Seg 1 | base=0x2000 | lim=0x400</text>
+            <rect x="285" y="100" width="188" height="20" rx="2" fill="rgba(167,139,250,0.15)"/>
+            <text x="310" y="114" font-family="IBM Plex Mono,monospace" font-size="11" fill="#a78bfa">Seg 2 | base=0x5000 | lim=0xC00  ←</text>
+            <text x="310" y="138" font-family="IBM Plex Mono,monospace" font-size="11" fill="#64748b">Seg 3 | base=0x8000 | lim=0x200</text>
+            <text x="310" y="162" font-family="IBM Plex Mono,monospace" font-size="11" fill="#64748b">…</text>
+            <!-- Arrow to adder -->
+            <line x1="480" y1="110" x2="540" y2="110" stroke="#a78bfa" stroke-width="1.2" marker-end="url(#arr)"/>
+            <text x="510" y="102" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#f59e0b">base=0x5000</text>
+            <!-- offset arrow -->
+            <line x1="144" y1="130" x2="144" y2="175" stroke="#06b6d4" stroke-width="1.2"/>
+            <line x1="144" y1="175" x2="555" y2="175" stroke="#06b6d4" stroke-width="1.2"/>
+            <line x1="555" y1="175" x2="555" y2="135" stroke="#06b6d4" stroke-width="1.2" marker-end="url(#arr)"/>
+            <!-- Adder -->
+            <circle cx="555" cy="112" r="22" fill="#111827" stroke="#10b981" stroke-width="1.5"/>
+            <text x="555" y="118" text-anchor="middle" font-family="Syne,sans-serif" font-size="20" fill="#10b981">+</text>
+            <!-- PA -->
+            <rect x="595" y="88" width="75" height="40" rx="4" fill="#1a2235" stroke="#10b981" stroke-width="1.5"/>
+            <text x="632" y="105" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#94a3b8">PA</text>
+            <text x="632" y="121" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="12" fill="#10b981">0x5200</text>
+            <line x1="577" y1="112" x2="595" y2="112" stroke="#10b981" stroke-width="1.2" marker-end="url(#arr)"/>
+            <!-- Fault -->
+            <text x="380" y="205" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#ef4444">offset ≥ limit → segmentation fault</text>
+          </svg>
+        </div>
+
+        <h3>Advantages & Disadvantages</h3>
+        <div class="compare-grid">
+          <div class="compare-card">
+            <h5 style="color:var(--accent4)">✅ Advantages</h5>
+            <ul>
+              <li>Matches programmer's view of a program.</li>
+              <li>Segments can be independently shared/protected.</li>
+              <li>Segments can grow/shrink independently.</li>
+              <li>No internal fragmentation.</li>
+            </ul>
+          </div>
+          <div class="compare-card">
+            <h5 style="color:var(--danger)">❌ Disadvantages</h5>
+            <ul>
+              <li>External fragmentation — holes between segments in RAM.</li>
+              <li>Compaction needed periodically (expensive).</li>
+              <li>Variable-length segments complicate allocation.</li>
+              <li>Entire segment must be in memory at once.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SECTION 7 -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section" id="s7">
+      <div class="section-number">07 — PAGING</div>
+      <h2>Paging</h2>
+      <div class="section-divider"></div>
+      <p>Paging eliminates external fragmentation by dividing memory into fixed-size blocks. The virtual address space is split into <strong>pages</strong>; physical memory is split into same-sized <strong>frames</strong> (or page frames). A <strong>page table</strong> maps each virtual page to a physical frame.</p>
+
+      <div class="subsection">
+        <h3>Page Size & Address Structure</h3>
+        <p>Typical page size: <strong>4 KB</strong> (4096 bytes) on x86/ARM. Some systems support <em>huge pages</em> (2 MB, 1 GB) for performance-critical workloads.</p>
+        <p>A virtual address is split into two fields:</p>
+        <ul>
+          <li><strong>VPN (Virtual Page Number)</strong>: upper bits — index into page table.</li>
+          <li><strong>Offset</strong>: lower bits — byte position within the page (12 bits for 4 KB pages).</li>
+        </ul>
+
+        <!-- DIAGRAM: Paging -->
+        <div class="diagram-wrap">
+          <div class="diagram-title">Fig 7.1 — Paging Address Translation</div>
+          <svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg" width="100%">
+            <!-- VA breakdown -->
+            <rect x="10" y="30" width="100" height="40" rx="4" fill="#1a2235" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="60" y="47" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#3b82f6">VPN</text>
+            <text x="60" y="63" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="12" fill="#f0f9ff">bits[31:12]</text>
+            <rect x="116" y="30" width="100" height="40" rx="4" fill="#1a2235" stroke="#06b6d4" stroke-width="1.5"/>
+            <text x="166" y="47" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#06b6d4">Offset</text>
+            <text x="166" y="63" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="12" fill="#f0f9ff">bits[11:0]</text>
+            <text x="110" y="20" text-anchor="middle" font-family="Lora,serif" font-size="11" fill="#64748b" font-style="italic">32-bit Virtual Address</text>
+            <!-- TLB box -->
+            <rect x="10" y="120" width="100" height="60" rx="6" fill="#1a1a2e" stroke="#a78bfa" stroke-width="1.5"/>
+            <text x="60" y="143" text-anchor="middle" font-family="Syne,sans-serif" font-size="12" fill="#a78bfa" font-weight="700">TLB</text>
+            <text x="60" y="162" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#94a3b8">Translation</text>
+            <text x="60" y="176" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#94a3b8">Lookaside Buffer</text>
+            <!-- arrow VPN -> TLB -->
+            <line x1="60" y1="70" x2="60" y2="120" stroke="#3b82f6" stroke-width="1.2" marker-end="url(#arr)"/>
+            <!-- Page Table in memory -->
+            <rect x="270" y="80" width="160" height="140" rx="6" fill="#111827" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="350" y="102" text-anchor="middle" font-family="Syne,sans-serif" font-size="13" fill="#3b82f6" font-weight="700">Page Table</text>
+            <line x1="270" y1="112" x2="430" y2="112" stroke="#1e3a5f" stroke-width="1"/>
+            <text x="290" y="132" font-family="IBM Plex Mono,monospace" font-size="10" fill="#64748b">VPN 0 → Frame 3</text>
+            <text x="290" y="152" font-family="IBM Plex Mono,monospace" font-size="10" fill="#64748b">VPN 1 → Frame 7</text>
+            <rect x="275" y="157" width="148" height="18" rx="2" fill="rgba(59,130,246,0.15)"/>
+            <text x="290" y="171" font-family="IBM Plex Mono,monospace" font-size="10" fill="#3b82f6">VPN 2 → Frame 5  ←</text>
+            <text x="290" y="191" font-family="IBM Plex Mono,monospace" font-size="10" fill="#64748b">VPN 3 → (not present)</text>
+            <text x="290" y="211" font-family="IBM Plex Mono,monospace" font-size="10" fill="#64748b">…</text>
+            <!-- TLB hit arrow to PA -->
+            <line x1="110" y1="150" x2="270" y2="165" stroke="#a78bfa" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+            <text x="185" y="148" font-family="IBM Plex Mono,monospace" font-size="9" fill="#a78bfa">TLB miss →</text>
+            <!-- PFN output -->
+            <line x1="430" y1="165" x2="520" y2="165" stroke="#3b82f6" stroke-width="1.2" marker-end="url(#arr)"/>
+            <text x="475" y="157" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#f59e0b">PFN=5</text>
+            <!-- offset concat -->
+            <line x1="166" y1="70" x2="166" y2="200" stroke="#06b6d4" stroke-width="1.2"/>
+            <line x1="166" y1="200" x2="535" y2="200" stroke="#06b6d4" stroke-width="1.2" marker-end="url(#arr)"/>
+            <!-- PA box -->
+            <rect x="520" y="140" width="160" height="70" rx="6" fill="#1a2235" stroke="#10b981" stroke-width="1.5"/>
+            <text x="600" y="162" text-anchor="middle" font-family="Syne,sans-serif" font-size="13" fill="#10b981" font-weight="700">Physical Address</text>
+            <text x="600" y="182" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#f0f9ff">Frame 5, offset</text>
+            <text x="600" y="200" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="12" fill="#10b981">0x5XXX</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Page Table Entry (PTE) Structure</h3>
+        <p>Each entry in a page table stores:</p>
+        <table>
+          <thead><tr><th>Field</th><th>Bits</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Physical Frame Number (PFN)</td><td>20+ bits</td><td>Which physical frame this page maps to</td></tr>
+            <tr><td>Present (P)</td><td>1 bit</td><td>Page is in RAM (1) or swapped out (0)</td></tr>
+            <tr><td>Read/Write (R/W)</td><td>1 bit</td><td>Page is writable</td></tr>
+            <tr><td>User/Supervisor (U/S)</td><td>1 bit</td><td>User-mode access allowed</td></tr>
+            <tr><td>Dirty (D)</td><td>1 bit</td><td>Page has been modified since loaded</td></tr>
+            <tr><td>Accessed (A)</td><td>1 bit</td><td>Page has been read/written recently</td></tr>
+            <tr><td>Execute Disable (XD/NX)</td><td>1 bit</td><td>Page cannot be executed (prevents code injection)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="subsection">
+        <h3>Translation Lookaside Buffer (TLB)</h3>
+        <p>Walking the page table on every memory access would halve performance (each access needs 2 memory lookups: page table + actual data). The <strong>TLB</strong> is a small, fast hardware cache inside the MMU that stores recent VPN→PFN translations.</p>
+        <ul>
+          <li><strong>TLB hit</strong>: translation found in TLB → 1 cycle penalty.</li>
+          <li><strong>TLB miss</strong>: MMU walks the page table in memory → several cycles penalty.</li>
+          <li>Typical TLB size: 32–4096 entries. TLB hit rate is usually &gt;99%.</li>
+          <li>On context switch, TLB must be <em>flushed</em> (or tagged with ASIDs to avoid flushing).</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Multi-Level Page Tables</h3>
+        <p>For a 64-bit address space, a single-level page table would require terabytes of RAM. Instead, modern OSes use <strong>hierarchical page tables</strong>. x86-64 uses 4 levels: PML4 → PDPT → PD → PT → Page. Only the portions of the table that are actually used are allocated, saving memory.</p>
+        <div class="box box-cyan">
+          <div class="box-title">📐 x86-64 Four-Level Paging</div>
+          <p>Virtual address (48-bit): <code>[PML4 9 bits][PDPT 9 bits][PD 9 bits][PT 9 bits][Offset 12 bits]</code>. Each level is a 4 KB table with 512 entries. The CR3 register holds the physical address of the top-level (PML4) table.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SECTION 8 -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section" id="s8">
+      <div class="section-number">08 — PAGE FAULTS & SWAPPING</div>
+      <h2>Page Faults, Sharing, Permissions & Swapping</h2>
+      <div class="section-divider"></div>
+
+      <div class="subsection">
+        <h3>Page Faults</h3>
+        <p>A <strong>page fault</strong> is a hardware exception raised by the MMU when a memory access cannot be satisfied by the current page table. The CPU saves its state and jumps to the OS <em>page fault handler</em>.</p>
+
+        <h4>Types of Page Faults</h4>
+        <table>
+          <thead><tr><th>Type</th><th>Cause</th><th>OS Action</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Minor fault</strong></td><td>Page not mapped but can be satisfied without disk I/O (e.g., demand-zero page, COW page)</td><td>Allocate/map a frame, update PTE, resume</td></tr>
+            <tr><td><strong>Major fault</strong></td><td>Page is on swap disk (Present bit = 0)</td><td>Load page from disk into a frame, update PTE, resume</td></tr>
+            <tr><td><strong>Invalid fault</strong></td><td>Access to completely unmapped or protected address</td><td>Send SIGSEGV to process; kill if unhandled</td></tr>
+          </tbody>
+        </table>
+
+        <!-- DIAGRAM: Page Fault Handling -->
+        <div class="diagram-wrap">
+          <div class="diagram-title">Fig 8.1 — Page Fault Handling Flow</div>
+          <svg viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg" width="100%">
+            <defs>
+              <marker id="a4" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/></marker>
+            </defs>
+            <!-- boxes -->
+            <rect x="260" y="10" width="160" height="40" rx="6" fill="#1a2235" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="340" y="35" text-anchor="middle" font-family="Syne,sans-serif" font-size="13" fill="#3b82f6" font-weight="700">Memory Access</text>
+
+            <rect x="260" y="80" width="160" height="40" rx="6" fill="#1a2235" stroke="#a78bfa" stroke-width="1.5"/>
+            <text x="340" y="105" text-anchor="middle" font-family="Syne,sans-serif" font-size="13" fill="#a78bfa" font-weight="700">MMU Check</text>
+
+            <rect x="120" y="155" width="140" height="40" rx="6" fill="#1a2e1a" stroke="#10b981" stroke-width="1.5"/>
+            <text x="190" y="180" text-anchor="middle" font-family="Syne,sans-serif" font-size="12" fill="#10b981" font-weight="700">TLB Hit ✓</text>
+
+            <rect x="420" y="155" width="140" height="40" rx="6" fill="#2e1a1a" stroke="#ef4444" stroke-width="1.5"/>
+            <text x="490" y="180" text-anchor="middle" font-family="Syne,sans-serif" font-size="12" fill="#ef4444" font-weight="700">Page Fault ✗</text>
+
+            <rect x="340" y="230" width="200" height="40" rx="6" fill="#1a1a2e" stroke="#f59e0b" stroke-width="1.5"/>
+            <text x="440" y="255" text-anchor="middle" font-family="Syne,sans-serif" font-size="12" fill="#f59e0b" font-weight="700">OS Fault Handler</text>
+
+            <!-- connector lines -->
+            <line x1="340" y1="50" x2="340" y2="80" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#a4)"/>
+            <line x1="340" y1="120" x2="190" y2="155" stroke="#10b981" stroke-width="1.2" marker-end="url(#a4)"/>
+            <text x="230" y="145" font-family="IBM Plex Mono,monospace" font-size="10" fill="#10b981">hit</text>
+            <line x1="340" y1="120" x2="490" y2="155" stroke="#ef4444" stroke-width="1.2" marker-end="url(#a4)"/>
+            <text x="420" y="145" font-family="IBM Plex Mono,monospace" font-size="10" fill="#ef4444">miss/fault</text>
+            <line x1="490" y1="195" x2="490" y2="220" stroke="#f59e0b" stroke-width="1.2"/>
+            <line x1="490" y1="220" x2="440" y2="230" stroke="#f59e0b" stroke-width="1.2" marker-end="url(#a4)"/>
+
+            <!-- OS outcomes -->
+            <text x="330" y="290" font-family="IBM Plex Mono,monospace" font-size="10" fill="#64748b">→ Minor: map page → Resume</text>
+            <text x="330" y="306" font-family="IBM Plex Mono,monospace" font-size="10" fill="#64748b">→ Major: load from disk → Resume</text>
+            <!-- resume arrow -->
+            <line x1="190" y1="195" x2="190" y2="240" stroke="#10b981" stroke-width="1.2"/>
+            <line x1="190" y1="240" x2="259" y2="240" stroke="#10b981" stroke-width="1.2"/>
+            <line x1="259" y1="240" x2="259" y2="30" stroke="#10b981" stroke-width="1.2"/>
+            <line x1="259" y1="30" x2="260" y2="30" stroke="#10b981" stroke-width="1.2" marker-end="url(#a4)"/>
+            <text x="170" y="240" font-family="IBM Plex Mono,monospace" font-size="9" fill="#10b981">resume</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Demand Paging</h3>
+        <p>Rather than loading the entire program into RAM at startup, the OS only loads a page when it is first accessed. The page table entry for the unloaded page has Present=0; the first access triggers a page fault, which loads the page. This reduces startup time and memory usage for programs with large but rarely-used code/data.</p>
+      </div>
+
+      <div class="subsection">
+        <h3>Page Sharing</h3>
+        <p>Multiple processes can map the <em>same physical frame</em> through different virtual addresses. Common uses:</p>
+        <ul>
+          <li><strong>Shared libraries</strong>: <code>libc.so</code> code pages are shared read-only among thousands of processes.</li>
+          <li><strong>Copy-on-Write (COW)</strong>: After <code>fork()</code>, parent and child share all pages (marked read-only). When either writes a shared page, a fault occurs, the OS copies the frame, marks both copies writable, and resumes. This makes <code>fork()</code> extremely fast.</li>
+          <li><strong>Shared memory IPC</strong>: Processes can share data regions via <code>mmap(MAP_SHARED)</code> or POSIX shared memory (<code>shm_open</code>).</li>
+        </ul>
+      </div>
+
+      <div class="subsection">
+        <h3>Read/Write Permissions</h3>
+        <p>Each PTE carries R/W, U/S, and NX (no-execute) bits. The MMU enforces these on every access:</p>
+        <ul>
+          <li>Writing to a read-only page → fault → SIGSEGV (or COW if it was a shared mapping).</li>
+          <li>User-mode code accessing a kernel page → fault → SIGSEGV.</li>
+          <li>Executing from a no-execute page → fault → SIGSEGV (prevents shellcode injection).</li>
+        </ul>
+        <div class="box box-red">
+          <div class="box-title">🔒 W^X / DEP</div>
+          <p><strong>Write XOR Execute</strong> (W^X) is a security policy enforced via NX bits: a page that is writable cannot simultaneously be executable. This prevents common exploit techniques like writing shellcode to the stack and executing it. Windows calls this <em>Data Execution Prevention (DEP)</em>.</p>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Swapping & Page Replacement</h3>
+        <p>When physical RAM is full and a new page must be brought in, the OS must <strong>evict</strong> an existing page to disk (<em>swap space</em> on Linux, <em>pagefile.sys</em> on Windows).</p>
+
+        <h4>Page Replacement Algorithms</h4>
+        <table>
+          <thead><tr><th>Algorithm</th><th>Policy</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><strong>OPT (Optimal)</strong></td><td>Evict page used furthest in future</td><td>Theoretical minimum faults; impractical (requires future knowledge)</td></tr>
+            <tr><td><strong>FIFO</strong></td><td>Evict oldest loaded page</td><td>Simple; suffers from Bélády's anomaly</td></tr>
+            <tr><td><strong>LRU</strong></td><td>Evict least recently used page</td><td>Near-optimal in practice; expensive to implement exactly</td></tr>
+            <tr><td><strong>Clock (CLOCK)</strong></td><td>Circular list with reference bit</td><td>Practical LRU approximation; used by Linux</td></tr>
+            <tr><td><strong>LFU</strong></td><td>Evict least frequently used</td><td>Doesn't handle phase changes well</td></tr>
+          </tbody>
+        </table>
+
+        <h4>Thrashing</h4>
+        <p><strong>Thrashing</strong> occurs when the OS spends more time swapping pages in and out than executing processes — because the combined working sets of all processes exceed physical RAM. Detected by high page-fault rate with low CPU utilization. The OS responds by reducing the degree of multiprogramming (suspending some processes).</p>
+      </div>
+
+      <div class="subsection">
+        <h3>Process Memory vs OS Memory</h3>
+        <p>The virtual address space is divided between user space and kernel space:</p>
+        <ul>
+          <li><strong>User space</strong>: code, data, heap, stack of the process. Accessible only in user mode.</li>
+          <li><strong>Kernel space</strong>: kernel code, per-process kernel stacks, page tables, device driver buffers. Accessible only in kernel mode.</li>
+          <li>On x86-64 Linux: user space uses virtual addresses <code>0x0000000000000000 – 0x00007FFFFFFFFFFF</code> (128 TB); kernel space uses <code>0xFFFF800000000000 – 0xFFFFFFFFFFFFFFFF</code> (128 TB).</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SECTION 9 -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section" id="s9">
+      <div class="section-number">09 — BOOKKEEPING</div>
+      <h2>Memory Bookkeeping & Management</h2>
+      <div class="section-divider"></div>
+      <p>The OS must carefully track which physical frames are free, which are allocated to which process, and what properties each mapping has.</p>
+
+      <div class="subsection">
+        <h3>Physical Memory Tracking</h3>
+        <h4>Free Frame List / Buddy System</h4>
+        <p>The OS maintains a data structure of all free physical frames. When a page is needed, a free frame is popped; when a page is evicted, its frame is returned to the free list. Linux uses the <strong>Buddy System</strong> — memory is maintained as blocks of power-of-2 sizes. Splitting a large block to satisfy a smaller request and merging freed adjacent (buddy) blocks prevents fragmentation.</p>
+
+        <div class="box box-blue">
+          <div class="box-title">🧩 Buddy System Example</div>
+          <p>Free pool has one 8-frame block. Process requests 3 frames → system uses a 4-frame block (smallest that fits): splits 8 → 4+4; uses one 4-frame block (internal fragmentation = 1 frame). When freed, checks if its buddy is also free; if so, merges back to 8.</p>
+        </div>
+
+        <h4>Slab Allocator</h4>
+        <p>For kernel objects (task structs, inodes, dentries) that are frequently allocated and freed in fixed sizes, Linux uses the <strong>slab allocator</strong>. Slabs are pre-allocated pools for specific object types, eliminating per-allocation overhead and reducing fragmentation.</p>
+
+        <h3>Virtual Memory Area (VMA) Tracking</h3>
+        <p>Each process's virtual address space is described by a set of <strong>VMAs (Virtual Memory Areas)</strong> — contiguous ranges with uniform permissions and backing. In Linux, each process has a <code>mm_struct</code> containing a list/rbtree of <code>vm_area_struct</code> objects. Each VMA records:</p>
+        <ul>
+          <li>Start and end virtual address.</li>
+          <li>Permissions (read, write, execute).</li>
+          <li>Flags (private, shared, anonymous, file-backed).</li>
+          <li>Pointer to backing file (if file-mapped) and offset.</li>
+        </ul>
+
+        <pre><code><span class="cm">// Inspect a process's VMAs:</span>
+cat /proc/&lt;pid&gt;/maps
+
+<span class="cm">// Example output:</span>
+<span class="str">00400000-00401000 r-xp 00000000 08:01 123456 /usr/bin/myapp</span>
+<span class="str">00600000-00601000 r--p 00000000 08:01 123456 /usr/bin/myapp</span>
+<span class="str">00601000-00602000 rw-p 00001000 08:01 123456 /usr/bin/myapp</span>
+<span class="str">7fff8000-7fffa000 rwxp 00000000 00:00 0      [stack]</span></code></pre>
+
+        <h3>Reference Counting & Copy-On-Write</h3>
+        <p>Each physical page has a <strong>reference count</strong> — how many page table entries point to it. When a page is shared (via <code>fork</code> or shared mapping), its reference count is incremented. A page is only freed when its reference count drops to zero. COW pages have count > 1 and are marked read-only; the first write triggers a fault that creates a private copy.</p>
+
+        <h3>Reclaim & OOM Killer</h3>
+        <p>When memory is critically low, the Linux kernel's <strong>kswapd</strong> daemon reclaims pages by writing dirty pages to swap and freeing clean pages. If reclaim fails to free enough memory, the <strong>OOM (Out-Of-Memory) Killer</strong> selects a process to terminate using a heuristic score (based on memory usage, priority, etc.).</p>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SECTION 10 -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section" id="s10">
+      <div class="section-number">10 — CASE STUDY</div>
+      <h2>Case Study: Linux OS Memory Management</h2>
+      <div class="section-divider"></div>
+
+      <div class="subsection">
+        <h3>Architecture Overview</h3>
+        <p>Linux uses a <strong>4-level (or 5-level on newer CPUs) hierarchical paging</strong> structure. Every process has its own <code>mm_struct</code> which holds pointers to its page directory and VMA list. The kernel itself is mapped into the upper portion of every process's address space for fast system call entry.</p>
+
+        <h3>Key Components</h3>
+
+        <h4>Physical Memory Zones</h4>
+        <p>Linux divides physical RAM into <em>zones</em> for historical and hardware reasons:</p>
+        <table>
+          <thead><tr><th>Zone</th><th>Range (x86-64)</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>ZONE_DMA</code></td><td>0 – 16 MB</td><td>Legacy ISA DMA devices that can only access low memory</td></tr>
+            <tr><td><code>ZONE_DMA32</code></td><td>0 – 4 GB</td><td>32-bit DMA-capable devices on 64-bit systems</td></tr>
+            <tr><td><code>ZONE_NORMAL</code></td><td>Remaining RAM</td><td>Regular kernel and user page allocations</td></tr>
+            <tr><td><code>ZONE_HIGHMEM</code></td><td>(32-bit only)</td><td>Memory above 896 MB not directly mapped in kernel space</td></tr>
+          </tbody>
+        </table>
+
+        <h4>The Buddy Allocator</h4>
+        <p>Linux's physical allocator manages pages in blocks of 2<sup>0</sup> to 2<sup>10</sup> pages (1 to 1024 pages = up to 4 MB). Each zone maintains 11 free lists. The <code>alloc_pages()</code> function satisfies allocation requests; <code>__free_pages()</code> returns pages and coalesces buddies.</p>
+
+        <h4>The Slab/SLUB Allocator</h4>
+        <p>Built on top of the buddy allocator, the <strong>SLUB allocator</strong> (modern default) provides object caches for frequently allocated kernel structures. Each cache (<code>kmem_cache</code>) is tuned for a specific object size and type, minimizing fragmentation and allocation latency.</p>
+
+        <h4>Virtual Memory Subsystem</h4>
+        <p>The <code>do_page_fault()</code> handler in Linux processes all page faults. It looks up the faulting address in the VMA list. If found and access is valid, it calls <code>handle_mm_fault()</code> to populate the PTE (allocate a zero page, load from file, or perform COW). If not found, it delivers SIGSEGV.</p>
+
+        <h4>Swap System</h4>
+        <p>Linux swap can be a <strong>swap partition</strong> or a <strong>swap file</strong>. Pages are tracked by <em>swap entries</em> in the PTE (when Present=0, the PTE stores the swap device and offset). <code>kswapd</code> runs in the background and reclaims pages when the number of free pages falls below <code>pages_low</code>. The <strong>LRU</strong> policy (approximated via active/inactive page lists) guides eviction decisions.</p>
+
+        <h4>Transparent Huge Pages (THP)</h4>
+        <p>Linux can automatically back anonymous mappings with 2 MB huge pages instead of 4 KB pages. This reduces TLB pressure for memory-intensive workloads. The <code>khugepaged</code> daemon scans for opportunities to coalesce 4 KB pages into huge pages.</p>
+
+        <div class="box box-green">
+          <div class="box-title">🐧 Useful Linux Memory Commands</div>
+          <pre style="margin:0;background:transparent;border:none;padding:0;"><code><span class="fn">free</span> -h                  <span class="cm"># show total/used/free RAM and swap</span>
+cat /proc/meminfo        <span class="cm"># detailed kernel memory statistics</span>
+cat /proc/&lt;pid&gt;/maps    <span class="cm"># VMAs of a process</span>
+cat /proc/&lt;pid&gt;/smaps   <span class="cm"># detailed memory stats per VMA</span>
+<span class="fn">vmstat</span> 1                 <span class="cm"># virtual memory statistics</span>
+<span class="fn">pmap</span> &lt;pid&gt;               <span class="cm"># process memory map summary</span>
+<span class="fn">valgrind</span> ./myapp         <span class="cm"># detect memory leaks/errors</span></code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SECTION 11 -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <div class="section" id="s11">
+      <div class="section-number">11 — CASE STUDY</div>
+      <h2>Case Study: Windows OS Memory Management</h2>
+      <div class="section-divider"></div>
+
+      <div class="subsection">
+        <h3>Architecture Overview</h3>
+        <p>Windows uses a <strong>two-level (or four-level on x64) paging</strong> architecture managed by the <em>Memory Manager</em> component of the Windows kernel (ntoskrnl.exe). It provides a rich set of memory management APIs and abstractions distinct from POSIX.</p>
+
+        <h3>Key Components</h3>
+
+        <h4>Virtual Address Space Layout (x64 Windows)</h4>
+        <table>
+          <thead><tr><th>Region</th><th>Range</th><th>Size</th></tr></thead>
+          <tbody>
+            <tr><td>User space</td><td>0x0000000000000000 – 0x00007FFFFFFFFFFF</td><td>128 TB</td></tr>
+            <tr><td>Kernel space</td><td>0xFFFF080000000000 – 0xFFFFFFFFFFFFFFFF</td><td>~128 TB</td></tr>
+          </tbody>
+        </table>
+
+        <h4>Windows Memory API</h4>
+        <p>Windows exposes memory management through <strong>Win32 API</strong> functions:</p>
+        <table>
+          <thead><tr><th>Function</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>VirtualAlloc()</code></td><td>Reserve and/or commit virtual address space (analogous to <code>mmap</code>)</td></tr>
+            <tr><td><code>VirtualFree()</code></td><td>Release/decommit memory (analogous to <code>munmap</code>)</td></tr>
+            <tr><td><code>VirtualProtect()</code></td><td>Change page protection flags (analogous to <code>mprotect</code>)</td></tr>
+            <tr><td><code>VirtualQuery()</code></td><td>Query information about a virtual memory region</td></tr>
+            <tr><td><code>MapViewOfFile()</code></td><td>Map a file or named shared memory object into address space</td></tr>
+            <tr><td><code>HeapAlloc()</code></td><td>Allocate from a process heap (analogous to <code>malloc</code>)</td></tr>
+          </tbody>
+        </table>
+
+        <h4>Memory States</h4>
+        <p>Windows pages exist in one of three states:</p>
+        <ul>
+          <li><strong>Reserved</strong>: Address range claimed but no physical storage backing it. Cannot be accessed.</li>
+          <li><strong>Committed</strong>: Physical pages (RAM or pagefile) allocated and ready to use.</li>
+          <li><strong>Free</strong>: Not reserved or committed; available for allocation.</li>
+        </ul>
+
+        <h4>Page File & Working Set</h4>
+        <p>Windows uses <strong>pagefile.sys</strong> as its swap space. The <em>working set</em> of a process is the set of pages currently resident in RAM. The <em>Memory Manager</em> trims working sets using a modified <strong>LRU clock</strong> algorithm. The <em>Modified Page Writer</em> flushes dirty pages to the pagefile so they can be reused.</p>
+
+        <h4>Section Objects & Memory-Mapped Files</h4>
+        <p>Windows maps files into memory using <em>Section Objects</em> (called <em>file mappings</em> in Win32). A section object backed by a file provides the same functionality as <code>mmap(MAP_SHARED)</code> on Linux. The <em>Cache Manager</em> uses section objects to implement disk caching — file data is cached in the kernel's virtual address space as mapped sections.</p>
+
+        <h4>ASLR, DEP, and CFG</h4>
+        <ul>
+          <li><strong>ASLR (Address Space Layout Randomisation)</strong>: Base addresses of the executable, DLLs, heap, and stack are randomized at load time, making it harder for attackers to predict target addresses.</li>
+          <li><strong>DEP (Data Execution Prevention)</strong>: Enforces W^X using NX page table bits. Prevents execution of data pages.</li>
+          <li><strong>CFG (Control Flow Guard)</strong>: Validates indirect function calls/jumps to prevent return-oriented programming (ROP) exploits.</li>
+        </ul>
+
+        <div class="box box-blue">
+          <div class="box-title">🪟 Useful Windows Memory Tools</div>
+          <ul>
+            <li><strong>Task Manager → Details → Memory</strong>: Working Set, commit size per process.</li>
+            <li><strong>Process Explorer (Sysinternals)</strong>: Detailed per-process memory maps, virtual address space viewer.</li>
+            <li><strong>RAMMap (Sysinternals)</strong>: Physical memory usage by type (process private, mapped files, standby, etc.).</li>
+            <li><strong>WinDbg</strong>: Kernel debugger; <code>!vm</code> command dumps memory manager state.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <h3>Linux vs Windows Memory Management — Comparison</h3>
+        <table>
+          <thead><tr><th>Feature</th><th>Linux</th><th>Windows</th></tr></thead>
+          <tbody>
+            <tr><td>Page size</td><td>4 KB (+ 2 MB / 1 GB huge pages)</td><td>4 KB (+ 2 MB / 1 GB large pages)</td></tr>
+            <tr><td>Swap backing</td><td>Swap partition / swap file</td><td>pagefile.sys</td></tr>
+            <tr><td>Memory map API</td><td><code>mmap()</code></td><td><code>VirtualAlloc()</code> / <code>MapViewOfFile()</code></td></tr>
+            <tr><td>Page replacement</td><td>Active/Inactive LRU lists (kswapd)</td><td>Working set trimming + modified page writer</td></tr>
+            <tr><td>Kernel allocator</td><td>Buddy + SLUB slab</td><td>Pool allocator (paged/nonpaged pool)</td></tr>
+            <tr><td>Process isolation</td><td>Separate page tables per process</td><td>Separate page tables per process</td></tr>
+            <tr><td>ASLR</td><td>Yes (KASLR for kernel too)</td><td>Yes (mandatory on Win8+)</td></tr>
+            <tr><td>NX/DEP</td><td>NX bit / PAE</td><td>DEP / NX bit</td></tr>
+            <tr><td>VMA inspection</td><td><code>/proc/pid/maps</code></td><td>VirtualQuery / Process Explorer</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="border-top: 1px solid var(--border); padding-top: 32px; margin-top: 40px;">
+      <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);">
+        Operating Systems · Unit 4 · Memory Management<br>
+        Topics: Address Bus · Process Memory Layout · Virtual Memory · mmap/sbrk/mprotect · Segmentation · Paging · TLB · Page Faults · Swapping · Linux · Windows
+      </p>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<a href="#" id="btt" title="Back to top">↑</a>
+
+<script>
+  // Sidebar active link highlight on scroll
+  const sections = document.querySelectorAll('.section');
+  const navLinks = document.querySelectorAll('.nav-link');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const id = entry.target.id;
+        const active = document.querySelector(`.nav-link[href="#${id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { threshold: 0.25 });
+
+  sections.forEach(s => observer.observe(s));
+
+  // Back to top visibility
+  const btt = document.getElementById('btt');
+  window.addEventListener('scroll', () => {
+    btt.style.opacity = window.scrollY > 400 ? '1' : '0';
+  });
+  btt.style.opacity = '0';
+  btt.style.transition = 'opacity 0.3s';
+</script>
+</body>
+</html>
